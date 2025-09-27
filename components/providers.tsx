@@ -6,6 +6,7 @@ import { SuiClientProvider, WalletProvider } from "@mysten/dapp-kit";
 import { getFullnodeUrl } from "@mysten/sui/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
+import { AuthProvider } from "@/hooks/use-auth";
 
 const networks = {
   devnet: { url: getFullnodeUrl("devnet") },
@@ -20,7 +21,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <SuiClientProvider networks={networks} defaultNetwork="testnet">
-        <WalletProvider autoConnect={true}>{children}</WalletProvider>
+        <WalletProvider autoConnect={true}>
+          <AuthProvider>{children}</AuthProvider>
+        </WalletProvider>
       </SuiClientProvider>
     </QueryClientProvider>
   );

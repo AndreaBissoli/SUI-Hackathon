@@ -19,47 +19,22 @@ import { getUserProfileByAddress } from "@/lib/sui-queries";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import UserContracts from "@/components/user-contracts";
-
-interface UserProfile {
-  type: "student" | "investor" | null;
-  data: any;
-}
+import { useAuth } from "@/hooks/use-auth";
 
 export default function ProfilePage() {
   const account = useCurrentAccount();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const { userProfile, getDisplayName, getInitials, refreshProfile } =
+    useAuth();
 
   useEffect(() => {
     if (!account) {
       router.push("/login");
       return;
     }
-
-    loadUserProfile();
+    setLoading(false);
   }, [account, router]);
-
-  const loadUserProfile = async () => {
-    if (!account?.address) return;
-
-    setLoading(true);
-    try {
-      const profile = await getUserProfileByAddress(account.address);
-      console.log(profile);
-      setUserProfile(profile);
-      console.log("User profile:", profile);
-    } catch (error) {
-      console.error("Error loading profile:", error);
-      setUserProfile({ type: null, data: null });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!account) {
-    return null;
-  }
 
   if (loading) {
     return (
@@ -110,21 +85,6 @@ export default function ProfilePage() {
     );
   }
 
-  // Se ha profilo, mostra i dettagli
-  const getDisplayName = () => {
-    if (userProfile?.data?.name && userProfile?.data?.surname) {
-      return `${userProfile.data.name} ${userProfile.data.surname}`;
-    }
-    return account.address.slice(0, 6) + "..." + account.address.slice(-4);
-  };
-
-  const getInitials = () => {
-    if (userProfile?.data?.name && userProfile?.data?.surname) {
-      return `${userProfile.data.name[0]}${userProfile.data.surname[0]}`.toUpperCase();
-    }
-    return account.address.slice(2, 4).toUpperCase();
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -160,7 +120,7 @@ export default function ProfilePage() {
                     {userProfile.type === "student" ? "Student" : "Investor"}
                   </p>
                   <p className="text-sm text-muted-foreground font-mono mt-1">
-                    {account.address}
+                    {account?.address}
                   </p>
                 </div>
               </div>
@@ -224,7 +184,7 @@ export default function ProfilePage() {
                     Go to Dashboard
                   </Link>
                 </Button>
-                <Button variant="outline" onClick={loadUserProfile}>
+                <Button variant="outline" onClick={refreshProfile}>
                   Refresh Profile
                 </Button>
               </div>
