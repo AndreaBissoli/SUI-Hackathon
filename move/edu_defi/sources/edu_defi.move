@@ -206,22 +206,4 @@ module edu_defi::edu_defi {
     }
 
 
-    #[test_only]
-    public fun create_registry_for_testing(ctx: &mut TxContext): ServiceRegistry {
-        ServiceRegistry {
-            id: object::new(ctx),
-            students: table::new(ctx),
-            investors: table::new(ctx),
-            contracts: vector::empty()
-        }
-    }
-
-    #[test_only]
-    public fun get_registry_stats(registry: &ServiceRegistry): (u64, u64, u64) {
-        (
-            table::length(&registry.students),
-            table::length(&registry.investors),
-            vector::length(&registry.contracts),
-        )
-    }
 }
