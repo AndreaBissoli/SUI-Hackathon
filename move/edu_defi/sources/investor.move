@@ -1,9 +1,7 @@
 module edu_defi::investor {
     use sui::clock::{Self, Clock};
     use std::string::String;
-
-    // ============ Error Codes ============
-    const E_UNAUTHORIZED: u64 = 6;
+    use edu_defi::errors;
 
     /// Investor profile structure
     public struct Investor has key, store {
@@ -50,7 +48,7 @@ module edu_defi::investor {
         profile_image: String,
         ctx: &mut TxContext
     ) {
-        assert!(investor.owner == tx_context::sender(ctx), E_UNAUTHORIZED);
+        assert!(investor.owner == tx_context::sender(ctx), errors::unauthorized());
         
         investor.name = name;
         investor.surname = surname;

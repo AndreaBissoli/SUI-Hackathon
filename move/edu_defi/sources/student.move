@@ -1,12 +1,7 @@
 module edu_defi::student {
     use sui::clock::{Self, Clock};
     use std::string::String;
-
-    // ============ Error Codes ============
-    const E_INVALID_AMOUNT: u64 = 1;
-    const E_INVALID_PERCENTAGE: u64 = 2;
-    const E_UNAUTHORIZED: u64 = 6;
-    const E_INVALID_DURATION: u64 = 9;
+    use edu_defi::errors;
 
     /// Student profile structure
     public struct Student has key, store {
@@ -36,9 +31,9 @@ module edu_defi::student {
         clock: &Clock,
         ctx: &mut TxContext
     ): Student {
-        assert!(equity_percentage <= 100, E_INVALID_PERCENTAGE);
-        assert!(funding_requested > 0, E_INVALID_AMOUNT);
-        assert!(duration_months > 0, E_INVALID_DURATION);
+        assert!(equity_percentage <= 100, errors::invalid_percentage());
+        assert!(funding_requested > 0, errors::invalid_amount());
+        assert!(duration_months > 0, errors::invalid_duration());
 
         Student {
             id: object::new(ctx),
@@ -73,10 +68,10 @@ module edu_defi::student {
         duration_months: u64,
         ctx: &mut TxContext
     ) {
-        assert!(student.owner == tx_context::sender(ctx), E_UNAUTHORIZED);
-        assert!(equity_percentage <= 100, E_INVALID_PERCENTAGE);
-        assert!(funding_requested > 0, E_INVALID_AMOUNT);
-        assert!(duration_months > 0, E_INVALID_DURATION);
+        assert!(student.owner == tx_context::sender(ctx), errors::unauthorized());
+        assert!(equity_percentage <= 100, errors::invalid_duration());
+        assert!(funding_requested > 0, errors::invalid_amount());
+        assert!(duration_months > 0, errors::invalid_duration());
 
         student.name = name;
         student.surname = surname;
