@@ -1,7 +1,7 @@
 /// Module: edu_defi
 module edu_defi::edu_defi {
     
-    use edu_defi::student;
+    use edu_defi::student::{Self, Student};
     use edu_defi::investor::{Self, Investor};
     use edu_defi::contract;
     use edu_defi::errors;
@@ -11,8 +11,8 @@ module edu_defi::edu_defi {
 
     public struct ServiceRegistry has key {
         id: UID,
-        students: Table<address, bool>,
-        investors: Table<address, bool>,
+        students: Table<address, address>,
+        investors: Table<address, address>,
         contracts: vector<address>, // keep order if you really need it
     }
 
@@ -26,17 +26,6 @@ module edu_defi::edu_defi {
         transfer::share_object(registry);
     }
 
-    fun add_student(registry: &mut ServiceRegistry, a: address) {
-        if (!table::contains(&registry.students, a)) {
-            table::add(&mut registry.students, a, true);
-        }
-    }
-
-    fun add_investor(registry: &mut ServiceRegistry, a: address) {
-        if (!table::contains(&registry.investors, a)) {
-            table::add(&mut registry.investors, a, true);
-        }
-    }
     /// Add contract to registry
     fun add_contract(registry: &mut ServiceRegistry, contract_address: address) {
         vector::push_back(&mut registry.contracts, contract_address);
@@ -57,6 +46,7 @@ module edu_defi::edu_defi {
         clock: &Clock,
         ctx: &mut TxContext
     ) {
+        assert!(!table::contains(&registry.students, tx_context::sender(ctx)), errors::already_registered());
         let student = student::create_profile(
             name,
             surname,
@@ -69,8 +59,7 @@ module edu_defi::edu_defi {
             clock,
             ctx
         );
-        let student_address = student::get_address(&student);
-        add_student(registry, student_address);
+        table::add(&mut registry.students, tx_context::sender(ctx), student::get_address(&student));
         transfer::public_transfer(student, tx_context::sender(ctx));
     }
 
@@ -85,6 +74,7 @@ module edu_defi::edu_defi {
         clock: &Clock,
         ctx: &mut TxContext
     ) {
+        assert!(!table::contains(&registry.investors, tx_context::sender(ctx)), errors::already_registered());
         let investor = investor::create_profile(
             name,
             surname,
@@ -94,7 +84,7 @@ module edu_defi::edu_defi {
             ctx
         );
         let investor_address = investor::get_address(&investor);
-        add_investor(registry, investor_address);
+        table::add(&mut registry.investors, tx_context::sender(ctx), investor_address);
         transfer::public_transfer(investor, tx_context::sender(ctx));
     }
 

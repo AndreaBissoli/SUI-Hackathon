@@ -18,6 +18,9 @@ module edu_defi::errors {
     /// Already claimed funds/tokens
     const E_ALREADY_CLAIMED: u64 = 10;
 
+    const E_ALREADY_REGISTERED: u64 = 11;
+    const E_INVALID_RECIPIENT: u64 = 12;
+
     // ============ Error Code Getters ============
     public(package) fun invalid_amount(): u64 { E_INVALID_AMOUNT }
     public(package) fun invalid_percentage(): u64 { E_INVALID_PERCENTAGE }
@@ -25,5 +28,7 @@ module edu_defi::errors {
     public(package) fun invalid_duration(): u64 { E_INVALID_DURATION }
     public(package) fun contract_not_found(): u64 { E_CONTRACT_NOT_FOUND }
     public(package) fun insufficient_funds(): u64 { E_INSUFFICIENT_FUNDS }
+    public(package) fun already_registered(): u64 { E_ALREADY_REGISTERED }
     public(package) fun already_claimed(): u64 { E_ALREADY_CLAIMED }
+    public(package) fun invalid_recipient(): u64 { E_INVALID_RECIPIENT }
 }
