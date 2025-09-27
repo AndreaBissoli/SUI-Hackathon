@@ -27,7 +27,8 @@ module edu_defi::edu_defi {
         id: UID,
         students: Table<address, address>,
         investors: Table<address, address>,
-        contracts: vector<address>, // keep order if you really need it
+        // contracts is a table mapping Student or Investor addresses to a vector of their contract addresses
+        contracts: Table<address, vector<address>>, // keep order if you really need it
     }
 
     fun init(ctx: &mut TxContext) {
@@ -35,22 +36,52 @@ module edu_defi::edu_defi {
             id: object::new(ctx),
             students: table::new(ctx),
             investors: table::new(ctx),
-            contracts: vector::empty(),
+            contracts: table::new(ctx),
         };
         transfer::share_object(registry);
     }
 
     /// Add contract to registry
-    fun add_contract(registry: &mut ServiceRegistry, contract_address: address) {
-        vector::push_back(&mut registry.contracts, contract_address);
+    fun add_contract(registry: &mut ServiceRegistry, contract_address: address, student_address: address, investor_address: &address) {
+        let student_contracts = if (table::contains(&registry.contracts, student_address)) {
+            table::borrow_mut(&mut registry.contracts, student_address)
+        } else {
+            let new_vec = vector::empty<address>();
+            table::add(&mut registry.contracts, student_address, new_vec);
+            table::borrow_mut(&mut registry.contracts, student_address)
+        };
+        vector::push_back(student_contracts, contract_address);
+        let investor_contracts = if (table::contains(&registry.contracts, *investor_address)) {
+            table::borrow_mut(&mut registry.contracts, *investor_address)
+        } else {
+            let new_vec = vector::empty<address>();
+            table::add(&mut registry.contracts, *investor_address, new_vec);
+            table::borrow_mut(&mut registry.contracts, *investor_address)
+        };
+        vector::push_back(investor_contracts, contract_address);
     }
 
     /// Remove contract from registry
-    fun remove_contract(registry: &mut ServiceRegistry, contract_address: address) {
-        let (found, index) = vector::index_of(&registry.contracts, &contract_address);
-        if (found) {
-            vector::remove(&mut registry.contracts, index);
+    fun remove_contract(registry: &mut ServiceRegistry, contract_address: address, student_address: address, investor_address: address) {
+        let student_contracts = table::borrow_mut(&mut registry.contracts, student_address);
+        let mut i = 0;
+        while (i < vector::length(student_contracts)) {
+            if (vector::borrow(student_contracts, i) == &contract_address) {
+                vector::remove(student_contracts, i);
+                break
+            };
+            i = i + 1;
         };
+        
+        let investor_contracts = table::borrow_mut(&mut registry.contracts, investor_address);
+        let mut j = 0;
+        while (j < vector::length(investor_contracts)) {
+            if (vector::borrow(investor_contracts, j) == &contract_address) {
+                vector::remove(investor_contracts, j);
+                break
+            };
+            j = j + 1;
+        }
     }
 
     /// Create a student profile
@@ -136,14 +167,15 @@ module edu_defi::edu_defi {
             ctx
         );
         
-        add_contract(registry, contract_address);
+        let investor_address = *table::borrow(&registry.investors, tx_context::sender(ctx));
+
+        add_contract(registry, contract_address, student_address, &investor_address);
         // Emit event for frontend notification
         event::emit(ContractProposedEvent {
             contract_address,
             student_address,
             investor_address: tx_context::sender(ctx),
         });
- 
     }
 
     /// Student rejects a proposed contract and removes it from registry
@@ -163,7 +195,7 @@ module edu_defi::edu_defi {
         let contract_address = contract::get_address(contract);
         
         // Remove contract from registry
-        remove_contract(registry, contract_address);
+        remove_contract(registry, contract_address, student_address, investor_address);
         
         // Emit event for contract rejection
         event::emit(ContractRejectedEvent {
