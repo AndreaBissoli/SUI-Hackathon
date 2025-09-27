@@ -1,13 +1,21 @@
 /// Module: edu_defi
 module edu_defi::edu_defi {
     
-    use edu_defi::student::{Self, Student};
-    use edu_defi::investor::{Self, Investor};
+    use edu_defi::student::{Self};
+    use edu_defi::investor::{Self};
     use edu_defi::contract;
     use edu_defi::errors;
+    use sui::event;
     use sui::clock::Clock;
     use std::string::String;
     use sui::table::{Self as table, Table};
+
+    public struct ContractProposedEvent has copy, drop {
+        contract_address: address,
+        student_address: address,
+        investor_address: address,
+    }
+    
 
     public struct ServiceRegistry has key {
         id: UID,
@@ -90,7 +98,6 @@ module edu_defi::edu_defi {
 
     /// Investor proposes a contract to a student
     public fun investor_propose_contract(
-        investor: &Investor,
         student_address: address,
         pdf_hash: String,
         funding_amount: u64,
@@ -101,7 +108,7 @@ module edu_defi::edu_defi {
         clock: &Clock,
         ctx: &mut TxContext
     ) {
-        assert!(table::contains(&registry.investors, investor::get_address(investor)), errors::unauthorized());
+        assert!(table::contains(&registry.investors, tx_context::sender(ctx)), errors::unauthorized());
         let contract_address = contract::create_and_share_contract(
             student_address,
             pdf_hash,
@@ -114,7 +121,13 @@ module edu_defi::edu_defi {
         );
         
         add_contract(registry, contract_address);
-        // TODO: notify student?
+        // Emit event for frontend notification
+        event::emit(ContractProposedEvent {
+            contract_address,
+            student_address,
+            investor_address: tx_context::sender(ctx),
+        });
+ 
     }
 
 
