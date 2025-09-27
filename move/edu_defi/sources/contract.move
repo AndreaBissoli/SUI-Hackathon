@@ -101,6 +101,18 @@ module edu_defi::contract {
         contract.is_active = true;
     }
 
+    /// Student rejects a proposed contract
+    public fun reject_contract(
+        contract: &Contract,
+        ctx: &mut TxContext
+    ) {
+        // Verify that the sender is the student for whom the contract was proposed
+        assert!(contract.student_address == tx_context::sender(ctx), errors::unauthorized());
+        
+        // Verify that the contract is not yet active (can't reject an active contract)
+        assert!(!contract.is_active, errors::unauthorized());
+    }
+
     /// Student releases funds from the contract after the release interval has passed
     public fun release_funds(
         contract: &mut Contract,
@@ -371,6 +383,16 @@ module edu_defi::contract {
         
         let dividend_payment = vector::borrow(&reward_pool.dividend_payments, payment_id);
         (dividend_payment.payment_id, dividend_payment.total_amount)
+    }
+
+    /// Get contract student address (used for validation)
+    public fun get_student_address(contract: &Contract): address {
+        contract.student_address
+    }
+
+    /// Check if contract is active
+    public fun is_contract_active(contract: &Contract): bool {
+        contract.is_active
     }
 
     /// Get contract information

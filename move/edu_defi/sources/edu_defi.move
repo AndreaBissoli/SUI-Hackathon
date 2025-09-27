@@ -3,7 +3,7 @@ module edu_defi::edu_defi {
     
     use edu_defi::student::{Self};
     use edu_defi::investor::{Self};
-    use edu_defi::contract;
+    use edu_defi::contract::{Self, Contract};
     use edu_defi::errors;
     use sui::event;
     use sui::clock::Clock;
@@ -11,6 +11,12 @@ module edu_defi::edu_defi {
     use sui::table::{Self as table, Table};
 
     public struct ContractProposedEvent has copy, drop {
+        contract_address: address,
+        student_address: address,
+        investor_address: address,
+    }
+
+    public struct ContractRejectedEvent has copy, drop {
         contract_address: address,
         student_address: address,
         investor_address: address,
@@ -37,6 +43,14 @@ module edu_defi::edu_defi {
     /// Add contract to registry
     fun add_contract(registry: &mut ServiceRegistry, contract_address: address) {
         vector::push_back(&mut registry.contracts, contract_address);
+    }
+
+    /// Remove contract from registry
+    fun remove_contract(registry: &mut ServiceRegistry, contract_address: address) {
+        let (found, index) = vector::index_of(&registry.contracts, &contract_address);
+        if (found) {
+            vector::remove(&mut registry.contracts, index);
+        };
     }
 
     /// Create a student profile
@@ -128,6 +142,33 @@ module edu_defi::edu_defi {
             investor_address: tx_context::sender(ctx),
         });
  
+    }
+
+    /// Student rejects a proposed contract and removes it from registry
+    public entry fun student_reject_contract(
+        contract: &Contract,
+        registry: &mut ServiceRegistry,
+        ctx: &mut TxContext
+    ) {
+        // Verify the sender is a registered student
+        assert!(table::contains(&registry.students, tx_context::sender(ctx)), errors::unauthorized());
+        
+        // Call the contract module's reject function to perform validation
+        contract::reject_contract(contract, ctx);
+        
+        // Get contract info for the event
+        let (student_address, investor_address, _, _, _, _, _) = contract::get_info(contract);
+        let contract_address = contract::get_address(contract);
+        
+        // Remove contract from registry
+        remove_contract(registry, contract_address);
+        
+        // Emit event for contract rejection
+        event::emit(ContractRejectedEvent {
+            contract_address,
+            student_address,
+            investor_address,
+        });
     }
 
 
