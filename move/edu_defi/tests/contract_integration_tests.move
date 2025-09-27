@@ -261,7 +261,7 @@ module edu_defi::contract_integration_tests {
     }
 
     #[test]
-    #[expected_failure(abort_code = 6)] // E_UNAUTHORIZED
+    #[expected_failure(abort_code = 6)] // errors::unauthorized()
     fun test_unauthorized_contract_acceptance() {
         let mut scenario = test_scenario::begin(ADMIN_ADDR);
         let clock = create_test_clock(&mut scenario);
@@ -323,7 +323,7 @@ module edu_defi::contract_integration_tests {
     }
 
     #[test]
-    #[expected_failure(abort_code = 1)] // E_INVALID_AMOUNT
+    #[expected_failure(abort_code = 1)] // errors::invalid_amount()
     fun test_invalid_contract_funding_amount() {
         let mut scenario = test_scenario::begin(ADMIN_ADDR);
         let clock = create_test_clock(&mut scenario);

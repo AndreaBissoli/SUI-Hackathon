@@ -110,7 +110,7 @@ module edu_defi::edu_defi {
         clock: &Clock,
         ctx: &mut TxContext
     ) {
-        assert!(table::contains(&registry.investors, investor::get_address(&investor)), 1);
+        assert!(table::contains(&registry.investors, investor::get_address(&investor)), errors::unauthorized());
         let contract_address = contract::create_and_share_contract(
             student_address,
             pdf_hash,
@@ -122,7 +122,6 @@ module edu_defi::edu_defi {
             ctx
         );
         add_contract(registry, contract_address);
-        // TODO
     }
 
 

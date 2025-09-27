@@ -5,15 +5,7 @@ module edu_defi::contract {
     use sui::clock::{Self, Clock};
     use std::string::String;
     use sui::vec_map::{Self, VecMap};
-
-    // ============ Error Codes ============
-    const E_INVALID_AMOUNT: u64 = 1;
-    const E_INVALID_PERCENTAGE: u64 = 2;
-    const E_CONTRACT_NOT_FOUND: u64 = 5;
-    const E_UNAUTHORIZED: u64 = 6;
-    const E_INSUFFICIENT_FUNDS: u64 = 8;
-    const E_INVALID_DURATION: u64 = 9;
-    const E_ALREADY_CLAIMED: u64 = 10;
+    use edu_defi::errors;
 
     /// Student token witness for creating currency
     public struct STUDENT_TOKEN has drop {}
@@ -75,9 +67,9 @@ module edu_defi::contract {
         clock: &Clock,
         ctx: &mut TxContext
     ): address {
-        assert!(funding_amount > 0, E_INVALID_AMOUNT);
-        assert!(equity_percentage <= 100, E_INVALID_PERCENTAGE);
-        assert!(duration_months > 0, E_INVALID_DURATION);
+        assert!(funding_amount > 0, errors::invalid_amount());
+        assert!(equity_percentage <= 100, errors::invalid_percentage());
+        assert!(duration_months > 0, errors::invalid_duration());
 
         let contract = Contract {
             id: object::new(ctx),
@@ -112,7 +104,7 @@ module edu_defi::contract {
         contract: &mut Contract,
         ctx: &mut TxContext
     ) {
-        assert!(contract.student_address == tx_context::sender(ctx), E_UNAUTHORIZED);
+        assert!(contract.student_address == tx_context::sender(ctx), errors::unauthorized());
         contract.is_active = true;
     }
 
@@ -125,12 +117,12 @@ module edu_defi::contract {
         _clock: &Clock,
         ctx: &mut TxContext
     ): Coin<StudentToken> {
-        assert!(contract.investor_address == tx_context::sender(ctx), E_UNAUTHORIZED);
-        assert!(contract.is_active, E_CONTRACT_NOT_FOUND);
-        assert!(!contract.has_tokens_issued, E_UNAUTHORIZED); // Tokens possono essere emessi solo una volta
+        assert!(contract.investor_address == tx_context::sender(ctx), errors::unauthorized());
+        assert!(contract.is_active, errors::contract_not_found());
+        assert!(!contract.has_tokens_issued, errors::unauthorized()); // Tokens possono essere emessi solo una volta
         
         let payment_amount = coin::value(&payment);
-        assert!(payment_amount >= contract.funding_amount, E_INSUFFICIENT_FUNDS);
+        assert!(payment_amount >= contract.funding_amount, errors::insufficient_funds());
         
         // Add payment to contract balance
         let payment_balance = coin::into_balance(payment);
@@ -173,13 +165,13 @@ module edu_defi::contract {
         clock: &Clock,
         ctx: &mut TxContext
     ) {
-        assert!(contract.student_address == tx_context::sender(ctx), E_UNAUTHORIZED);
-        assert!(contract.has_tokens_issued, E_CONTRACT_NOT_FOUND);
-        assert!(object::id(reward_pool) == *option::borrow(&contract.reward_pool_id), E_UNAUTHORIZED);
+        assert!(contract.student_address == tx_context::sender(ctx), errors::unauthorized());
+        assert!(contract.has_tokens_issued, errors::contract_not_found());
+        assert!(object::id(reward_pool) == *option::borrow(&contract.reward_pool_id), errors::unauthorized());
         
         let payment_amount = coin::value(&payment);
         let monthly_equity = (contract.student_monthly_income * contract.equity_percentage) / 100;
-        assert!(payment_amount >= monthly_equity, E_INSUFFICIENT_FUNDS);
+        assert!(payment_amount >= monthly_equity, errors::insufficient_funds());
         
         // Crea snapshot della distribuzione token attuale (DIVIDEND RECORD DATE)
         let dividend_payment = DividendPayment {
@@ -206,15 +198,15 @@ module edu_defi::contract {
     ): Coin<SUI> {
         let investor_address = tx_context::sender(ctx);
         let payments_length = vector::length(&reward_pool.dividend_payments);
-        assert!(payment_id < payments_length, E_CONTRACT_NOT_FOUND);
+        assert!(payment_id < payments_length, errors::contract_not_found());
         
         let dividend_payment = vector::borrow_mut(&mut reward_pool.dividend_payments, payment_id);
         
         // Verifica che non abbia già fatto claim su questo dividendo
-        assert!(!vector::contains(&dividend_payment.claimed_by, &investor_address), E_ALREADY_CLAIMED);
+        assert!(!vector::contains(&dividend_payment.claimed_by, &investor_address), errors::already_claimed());
         
         // Verifica che avesse token al momento dello snapshot
-        assert!(vec_map::contains(&dividend_payment.token_snapshot, &investor_address), E_UNAUTHORIZED);
+        assert!(vec_map::contains(&dividend_payment.token_snapshot, &investor_address), errors::unauthorized());
         
         let investor_tokens = *vec_map::get(&dividend_payment.token_snapshot, &investor_address);
         let investor_share = (dividend_payment.total_amount * investor_tokens) / reward_pool.total_token_supply;
@@ -256,7 +248,7 @@ module edu_defi::contract {
             i = i + 1;
         };
         
-        assert!(total_claimable > 0, E_INSUFFICIENT_FUNDS);
+        assert!(total_claimable > 0, errors::insufficient_funds());
         
         coin::from_balance(
             balance::split(&mut reward_pool.total_balance, total_claimable),
@@ -275,7 +267,7 @@ module edu_defi::contract {
         // Update distribuzione dei token quando vengono trasferiti
         if (vec_map::contains(&reward_pool.current_token_holders, &from_address)) {
             let from_balance = *vec_map::get(&reward_pool.current_token_holders, &from_address);
-            assert!(from_balance >= token_amount, E_INSUFFICIENT_FUNDS);
+            assert!(from_balance >= token_amount, errors::insufficient_funds());
             
             if (from_balance == token_amount) {
                 vec_map::remove(&mut reward_pool.current_token_holders, &from_address);
@@ -320,7 +312,7 @@ module edu_defi::contract {
         payment_id: u64
     ): (u64, u64, u64) {
         let payments_length = vector::length(&reward_pool.dividend_payments);
-        assert!(payment_id < payments_length, E_CONTRACT_NOT_FOUND);
+        assert!(payment_id < payments_length, errors::contract_not_found());
         
         let dividend_payment = vector::borrow(&reward_pool.dividend_payments, payment_id);
         (dividend_payment.payment_id, dividend_payment.total_amount, dividend_payment.payment_timestamp)
@@ -340,10 +332,10 @@ module edu_defi::contract {
         _clock: &Clock,
         ctx: &mut TxContext
     ) {
-        assert!(contract.investor_address == tx_context::sender(ctx), E_UNAUTHORIZED);
+        assert!(contract.investor_address == tx_context::sender(ctx), errors::unauthorized());
         
         let payment_amount = coin::value(&payment);
-        assert!(payment_amount >= contract.funding_amount, E_INSUFFICIENT_FUNDS);
+        assert!(payment_amount >= contract.funding_amount, errors::insufficient_funds());
         
         // Add payment to contract balance
         let payment_balance = coin::into_balance(payment);
