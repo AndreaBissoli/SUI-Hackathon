@@ -245,9 +245,28 @@ module edu_defi::contract {
             ctx
         )
     }
+    
+    /// function to transfer tokens between an investor who has some and another investor.
+    /// it should make use of the function update_token_distribution to update the distribution of tokens
+    public fun transfer_tokens(
+        reward_pool: &mut RewardPool,
+        to_address: address,
+        token_amount: u64,
+        ctx: &mut TxContext
+    ) {
+        let from_address = tx_context::sender(ctx);
+        assert!(vec_map::contains(&reward_pool.current_token_holders, &from_address), errors::unauthorized());
+        let from_balance = *vec_map::get(&reward_pool.current_token_holders, &from_address);
+        assert!(from_balance >= token_amount, errors::insufficient_funds());
+        assert!(token_amount > 0, errors::invalid_amount());
+        assert!(from_address != to_address, errors::invalid_recipient());
+        // Update token distribution
+        update_token_distribution(reward_pool, from_address, to_address, token_amount, ctx);
+    }
+
 
     /// Update token distribution when tokens are transferred/sold
-    public fun update_token_distribution(
+    fun update_token_distribution(
         reward_pool: &mut RewardPool,
         from_address: address,
         to_address: address,
