@@ -29,17 +29,17 @@ module edu_defi::edu_defi {
     // ============ Registry Functions ============
     
     /// Add student to registry
-    public fun add_student(registry: &mut ServiceRegistry, student_address: address) {
+    fun add_student(registry: &mut ServiceRegistry, student_address: address) {
         vector::push_back(&mut registry.students, student_address);
     }
 
     /// Add investor to registry
-    public fun add_investor(registry: &mut ServiceRegistry, investor_address: address) {
+    fun add_investor(registry: &mut ServiceRegistry, investor_address: address) {
         vector::push_back(&mut registry.investors, investor_address);
     }
 
     /// Add contract to registry
-    public fun add_contract(registry: &mut ServiceRegistry, contract_address: address) {
+    fun add_contract(registry: &mut ServiceRegistry, contract_address: address) {
         vector::push_back(&mut registry.contracts, contract_address);
     }
 
