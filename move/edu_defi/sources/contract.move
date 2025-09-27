@@ -101,6 +101,52 @@ module edu_defi::contract {
         contract.is_active = true;
     }
 
+    /// Student releases funds from the contract after the release interval has passed
+    public fun release_funds(
+        contract: &mut Contract,
+        clock: &Clock,
+        ctx: &mut TxContext
+    ) {
+        assert!(contract.student_address == tx_context::sender(ctx), errors::unauthorized());
+        assert!(contract.is_active, errors::contract_not_found());
+        
+        let current_time = clock::timestamp_ms(clock);
+        assert!(current_time >= contract.next_release_time, errors::unauthorized()); // Time not reached yet
+        
+        // Calculate how many intervals have passed since contract start
+        let contract_start_time = contract.next_release_time - (contract.release_interval_days * 24 * 60 * 60 * 1000);
+        let intervals_passed = ((current_time - contract_start_time) / (contract.release_interval_days * 24 * 60 * 60 * 1000)) + 1;
+        
+        // Calculate total intervals in the contract duration
+        let total_intervals = (contract.duration_months * 30) / contract.release_interval_days; // Approximate days per month
+        
+        // Ensure we don't exceed the total number of intervals
+        let actual_intervals = if (intervals_passed > total_intervals) {
+            total_intervals
+        } else {
+            intervals_passed
+        };
+        
+        // Calculate total amount that should have been released by now
+        let total_should_be_released = (contract.funding_amount * actual_intervals) / total_intervals;
+        
+        // Calculate the amount to release this time (difference between what should be released and what has been released)
+        assert!(total_should_be_released > contract.funds_released, errors::insufficient_funds());
+        let amount_to_release = total_should_be_released - contract.funds_released;
+        
+        // Check that contract has enough balance
+        assert!(balance::value(&contract.balance) >= amount_to_release, errors::insufficient_funds());
+        
+        // Update contract state
+        contract.funds_released = contract.funds_released + amount_to_release;
+        contract.next_release_time = current_time + (contract.release_interval_days * 24 * 60 * 60 * 1000);
+        
+        // Transfer the funds directly to the student's address
+        let release_balance = balance::split(&mut contract.balance, amount_to_release);
+        let release_coin = coin::from_balance(release_balance, ctx);
+        transfer::public_transfer(release_coin, contract.student_address);
+    }
+
     
 
     // Unfortunately Move does not support minting many different coins from the same function (yet) as it's a beta feature
