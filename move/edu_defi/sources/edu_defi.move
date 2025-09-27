@@ -69,6 +69,7 @@ module edu_defi::edu_defi {
         ctx: &mut TxContext
     ) {
         assert!(!table::contains(&registry.students, tx_context::sender(ctx)), errors::already_registered());
+        assert!(!table::contains(&registry.investors, tx_context::sender(ctx)), errors::already_registered());
         let student = student::create_profile(
             name,
             surname,
@@ -97,6 +98,7 @@ module edu_defi::edu_defi {
         ctx: &mut TxContext
     ) {
         assert!(!table::contains(&registry.investors, tx_context::sender(ctx)), errors::already_registered());
+        assert!(!table::contains(&registry.students, tx_context::sender(ctx)), errors::already_registered());
         let investor = investor::create_profile(
             name,
             surname,
