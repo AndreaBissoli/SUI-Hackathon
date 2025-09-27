@@ -6,36 +6,41 @@ module edu_defi::edu_defi {
     use edu_defi::contract;
     use sui::clock::Clock;
     use std::string::String;
+    use sui::vec_set::{Self, VecSet};
 
     /// Service registry to manage all profiles and contracts
     public struct ServiceRegistry has key {
         id: UID,
-        students: vector<address>,
-        investors: vector<address>,
-        contracts: vector<address>,
+        students: VecSet<address>,    // Set of registered student addresses
+        investors: VecSet<address>,   // Set of registered investor addresses
+        contracts: vector<address>,    // Keeping vector for contracts as order matters
     }
 
     /// Initialization function
     fun init(ctx: &mut TxContext) {
         let registry = ServiceRegistry {
             id: object::new(ctx),
-            students: vector::empty<address>(),
-            investors: vector::empty<address>(),
-            contracts: vector::empty<address>(),
+            students: vec_set::empty(),
+            investors: vec_set::empty(),
+            contracts: vector::empty(),
         };
         transfer::share_object(registry);
     }
 
     // ============ Registry Functions ============
     
-    /// Add student to registry
+    /// Add student to registry if not already present
     fun add_student(registry: &mut ServiceRegistry, student_address: address) {
-        vector::push_back(&mut registry.students, student_address);
+        if (!vec_set::contains(&registry.students, &student_address)) {
+            vec_set::insert(&mut registry.students, student_address);
+        }
     }
 
-    /// Add investor to registry
+    /// Add investor to registry if not already present
     fun add_investor(registry: &mut ServiceRegistry, investor_address: address) {
-        vector::push_back(&mut registry.investors, investor_address);
+        if (!vec_set::contains(&registry.investors, &investor_address)) {
+            vec_set::insert(&mut registry.investors, investor_address);
+        }
     }
 
     /// Add contract to registry
@@ -130,9 +135,9 @@ module edu_defi::edu_defi {
     public fun create_registry_for_testing(ctx: &mut TxContext): ServiceRegistry {
         ServiceRegistry {
             id: object::new(ctx),
-            students: vector::empty<address>(),
-            investors: vector::empty<address>(),
-            contracts: vector::empty<address>(),
+            students: vec_set::empty(),
+            investors: vec_set::empty(),
+            contracts: vector::empty(),
         }
     }
 
@@ -140,8 +145,8 @@ module edu_defi::edu_defi {
     /// Get registry stats for testing
     public fun get_registry_stats(registry: &ServiceRegistry): (u64, u64, u64) {
         (
-            vector::length(&registry.students),
-            vector::length(&registry.investors), 
+            vec_set::length(&registry.students),
+            vec_set::length(&registry.investors), 
             vector::length(&registry.contracts)
         )
     }
