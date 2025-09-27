@@ -323,24 +323,4 @@ module edu_defi::contract {
         (contract.student_address, contract.investor_address, contract.pdf_hash,
          contract.funding_amount, contract.equity_percentage, contract.duration_months, contract.is_active)
     }
-
-    /// Test version of fund_contract_with_tokens that doesn't create currency
-    #[test_only]
-    public fun fund_contract_with_tokens_test(
-        contract: &mut Contract,
-        payment: Coin<SUI>,
-        _clock: &Clock,
-        ctx: &mut TxContext
-    ) {
-        assert!(contract.investor_address == tx_context::sender(ctx), errors::unauthorized());
-        
-        let payment_amount = coin::value(&payment);
-        assert!(payment_amount >= contract.funding_amount, errors::insufficient_funds());
-        
-        // Add payment to contract balance
-        let payment_balance = coin::into_balance(payment);
-        balance::join(&mut contract.balance, payment_balance);
-        
-        contract.has_tokens_issued = true;
-    }
 }

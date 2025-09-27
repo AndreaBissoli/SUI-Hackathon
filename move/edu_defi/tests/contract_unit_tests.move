@@ -173,7 +173,7 @@ module edu_defi::contract_unit_tests {
     }
 
     #[test]
-    #[expected_failure(abort_code = 9)] // errors::invalid_duration()
+    #[expected_failure(abort_code = 9)] // E_INVALID_DURATION
     fun test_invalid_duration() {
         let mut scenario = test_scenario::begin(INVESTOR_ADDR);
         let clock = create_test_clock(&mut scenario);
