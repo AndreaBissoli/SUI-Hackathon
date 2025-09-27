@@ -1,37 +1,45 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
-import { Navigation } from "@/components/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { fetchStudents } from "@/lib/sui-queries"
-import type { Student } from "@/types"
-import { ArrowLeft, DollarSign, TrendingUp, FileText, Calendar } from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { Navigation } from "@/components/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { fetchStudents } from "@/lib/sui-queries";
+import type { Student } from "@/types";
+import {
+  ArrowLeft,
+  DollarSign,
+  TrendingUp,
+  FileText,
+  Calendar,
+} from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
 
 export default function StudentDetailPage() {
-  const params = useParams()
-  const [student, setStudent] = useState<Student | null>(null)
-  const [loading, setLoading] = useState(true)
+  const params = useParams();
+  const [student, setStudent] = useState<Student | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadStudent() {
       try {
-        const students = await fetchStudents()
-        const foundStudent = students.find((s) => s.id === params.id)
-        setStudent(foundStudent || null)
+        const students = await fetchStudents();
+        const foundStudent = students.find((s) => s.id === params.id);
+        setStudent(foundStudent || null);
       } catch (error) {
-        console.error("Error loading student:", error)
+        console.error("Error loading student:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    loadStudent()
-  }, [params.id])
+    loadStudent();
+  }, [params.id]);
+
+  const handleProposeInvestment = () => {};
 
   if (loading) {
     return (
@@ -47,7 +55,7 @@ export default function StudentDetailPage() {
           </div>
         </main>
       </div>
-    )
+    );
   }
 
   if (!student) {
@@ -57,7 +65,9 @@ export default function StudentDetailPage() {
         <main className="py-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-2xl font-bold mb-4">Student Not Found</h1>
-            <p className="text-muted-foreground mb-6">The student profile you're looking for doesn't exist.</p>
+            <p className="text-muted-foreground mb-6">
+              The student profile you're looking for doesn't exist.
+            </p>
             <Link href="/students">
               <Button>
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -67,7 +77,7 @@ export default function StudentDetailPage() {
           </div>
         </main>
       </div>
-    )
+    );
   }
 
   return (
@@ -109,12 +119,18 @@ export default function StudentDetailPage() {
 
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="secondary">Seeking Funding</Badge>
-                    <Badge variant="outline">${student.fundingRequested.toLocaleString()} Requested</Badge>
-                    <Badge variant="outline">{student.equityPercentage}% Equity Offered</Badge>
+                    <Badge variant="outline">
+                      ${student.fundingRequested.toLocaleString()} Requested
+                    </Badge>
+                    <Badge variant="outline">
+                      {student.equityPercentage}% Equity Offered
+                    </Badge>
                   </div>
 
                   <div className="flex gap-4">
-                    <Button size="lg">Propose Investment</Button>
+                    <Button onChange={handleProposeInvestment} size="lg">
+                      Propose Investment
+                    </Button>
                     <Button size="lg" variant="outline">
                       Contact Student
                     </Button>
@@ -135,18 +151,26 @@ export default function StudentDetailPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <div className="text-2xl font-bold">${student.fundingRequested.toLocaleString()}</div>
-                  <p className="text-sm text-muted-foreground">Total funding requested for education</p>
+                  <div className="text-2xl font-bold">
+                    ${student.fundingRequested.toLocaleString()}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Total funding requested for education
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <div className="font-medium">Equity Offered</div>
-                    <div className="text-muted-foreground">{student.equityPercentage}%</div>
+                    <div className="text-muted-foreground">
+                      {student.equityPercentage}%
+                    </div>
                   </div>
                   <div>
                     <div className="font-medium">Duration</div>
-                    <div className="text-muted-foreground">{student.durationMonths} months</div>
+                    <div className="text-muted-foreground">
+                      {student.durationMonths} months
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -163,11 +187,15 @@ export default function StudentDetailPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-sm">Equity Percentage</span>
-                    <span className="font-medium">{student.equityPercentage}%</span>
+                    <span className="font-medium">
+                      {student.equityPercentage}%
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm">Contract Duration</span>
-                    <span className="font-medium">{student.durationMonths} months</span>
+                    <span className="font-medium">
+                      {student.durationMonths} months
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm">Expected ROI</span>
@@ -194,7 +222,9 @@ export default function StudentDetailPage() {
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <div className="font-medium">CV/Resume</div>
-                        <div className="text-xs text-muted-foreground">IPFS: {student.cvHash.slice(0, 20)}...</div>
+                        <div className="text-xs text-muted-foreground">
+                          IPFS: {student.cvHash.slice(0, 20)}...
+                        </div>
                       </div>
                     </div>
                     <Button size="sm" variant="outline">
@@ -215,11 +245,17 @@ export default function StudentDetailPage() {
               <CardContent>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Profile Created</span>
-                    <span>{new Date(student.createdAt).toLocaleDateString()}</span>
+                    <span className="text-muted-foreground">
+                      Profile Created
+                    </span>
+                    <span>
+                      {new Date(student.createdAt).toLocaleDateString()}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Wallet Address</span>
+                    <span className="text-muted-foreground">
+                      Wallet Address
+                    </span>
                     <span className="font-mono text-xs">
                       {student.owner.slice(0, 6)}...{student.owner.slice(-4)}
                     </span>
@@ -235,5 +271,5 @@ export default function StudentDetailPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }

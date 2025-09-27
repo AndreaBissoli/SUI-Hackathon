@@ -1,8 +1,8 @@
 import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
 
-// Initialize Sui client for devnet
+// Initialize Sui client for testnet
 export const suiClient = new SuiClient({
-  url: getFullnodeUrl("devnet"),
+  url: getFullnodeUrl("testnet"),
 });
 
 // Contract addresses and package ID (these would be set after deployment)
@@ -15,4 +15,9 @@ export const MODULES = {
   STUDENT: `${PACKAGE_ID}::student`,
   INVESTOR: `${PACKAGE_ID}::investor`,
   CONTRACT: `${PACKAGE_ID}::contract`,
+} as const;
+
+export const STRUCTS = {
+  STUDENT: `${PACKAGE_ID}::student::Student`,
+  INVESTOR: `${PACKAGE_ID}::investor::Investor`,
 } as const;

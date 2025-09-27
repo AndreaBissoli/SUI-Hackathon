@@ -1,23 +1,22 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Navigation } from "@/components/navigation"
-import { WalletConnection } from "@/components/wallet-connection"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Wallet, Shield, Zap } from "lucide-react"
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Navigation } from "@/components/navigation";
+import { WalletConnection } from "@/components/wallet-connection";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Wallet, Shield, Zap } from "lucide-react";
+import { useCurrentAccount } from "@mysten/dapp-kit";
 
 export default function LoginPage() {
-  // Simplified without wallet integration for now
-  const isConnected = false
-  const currentAccount = null
-  const router = useRouter()
+  const account = useCurrentAccount();
+  const router = useRouter();
 
   useEffect(() => {
-    if (isConnected && currentAccount) {
-      router.push("/profile")
+    if (account) {
+      router.push("/profile");
     }
-  }, [isConnected, currentAccount, router])
+  }, [account, router]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -28,7 +27,9 @@ export default function LoginPage() {
           <Card>
             <CardHeader className="text-center">
               <CardTitle className="text-2xl">Connect Your Wallet</CardTitle>
-              <p className="text-muted-foreground">Access your EduDeFi profile by connecting your Sui wallet</p>
+              <p className="text-muted-foreground">
+                Access your EduDeFi profile by connecting your Sui wallet
+              </p>
             </CardHeader>
 
             <CardContent className="space-y-6">
@@ -62,5 +63,5 @@ export default function LoginPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }
