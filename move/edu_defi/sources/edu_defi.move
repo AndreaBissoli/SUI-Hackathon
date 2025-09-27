@@ -145,7 +145,7 @@ module edu_defi::edu_defi {
     }
 
     /// Student rejects a proposed contract and removes it from registry
-    public entry fun student_reject_contract(
+    public fun student_reject_contract(
         contract: &Contract,
         registry: &mut ServiceRegistry,
         ctx: &mut TxContext
