@@ -1,4 +1,163 @@
-# SUI Hackathon EPFL
+# EduDeFi Platform
+
+A decentralized educational finance platform built on the Sui blockchain that connects students with investors through smart contracts and tokenized equity.
+
+## 🎯 What is EduDeFi?
+
+EduDeFi revolutionizes educational funding by creating a transparent, blockchain-based system where:
+
+- **Students** receive funding for their education in exchange for future income sharing
+- **Investors** fund student contracts and receive tokenized equity with dividend rights
+- **Smart contracts** automate the entire process, ensuring trust and transparency
+
+## 🌟 Features
+
+### Contract Lifecycle Demo
+Experience the complete flow from contract creation to dividend distribution:
+
+1. **Create Contract** (Investor) - Define funding terms and equity percentage
+2. **Accept Contract** (Student) - Student accepts the proposed terms
+3. **Fund Contract** (Investor) - Investor funds the contract and receives tokens
+4. **Pay Dividend** (Student) - Student pays monthly dividends based on income
+5. **Claim Dividend** (Investor) - Investors claim their proportional dividends
+
+### Key Benefits
+- 🔐 **Transparent & Trustless** - All terms encoded in smart contracts
+- 💰 **Automatic Dividends** - Smart contract handles payment distribution
+- 🪙 **Tokenized Equity** - Tradeable tokens representing student equity
+- 📊 **Real-time Tracking** - Monitor contract performance and payments
+- ⚡ **Instant Settlement** - Blockchain-based instant transactions
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v18 or later)
+- Sui Wallet (recommended: Sui Wallet browser extension)
+- Sui CLI for testing with multiple addresses
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd SUI-Hackathon
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Start the development server:
+```bash
+npm run dev
+```
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+### Setup for Testing
+
+To fully test the contract lifecycle, you'll need multiple addresses:
+
+1. **Setup Sui CLI addresses:**
+```bash
+# Create investor address
+sui client new-address ed25519 investor
+
+# Create student address  
+sui client new-address ed25519 student
+
+# Switch between addresses during testing
+sui client switch --address investor
+sui client switch --address student
+```
+
+2. **Deploy the Move contract:**
+```bash
+cd move/edu_defi
+sui client publish --gas-budget 100000000
+```
+
+3. **Update Package ID:**
+   - Copy the package ID from the deployment output
+   - Update `TESTNET_EDU_DEFI_PACKAGE_ID` in `app/constants.ts`
+
+## 🎮 Using the Platform
+
+### Demo Walkthrough
+
+1. **Connect Wallet** - Connect your Sui wallet to get started
+
+2. **Enter Package ID** - Input your deployed contract package ID
+
+3. **Follow the Steps:**
+   - **Step 1:** Create contract with funding terms (as investor)
+   - **Step 2:** Switch to student address and accept contract
+   - **Step 3:** Switch back to investor and fund the contract
+   - **Step 4:** Switch to student and pay a dividend
+   - **Step 5:** Switch to investor and claim your dividend
+   - **Step 6:** Success! 🎉
+
+### Address Switching
+The demo requires switching between different addresses to simulate different roles:
+
+```bash
+# Switch to investor address
+sui client switch --address investor
+
+# Switch to student address
+sui client switch --address student
+```
+
+## 🏗️ Architecture
+
+### Smart Contracts (Move)
+- **`contract.move`** - Main contract logic for student-investor agreements
+- **`student.move`** - Student-specific functionality  
+- **`investor.move`** - Investor-specific functionality
+- **`edu_defi.move`** - Core platform logic
+
+### Frontend (React/Next.js)
+- **`ContractLifecycle.tsx`** - Main demo interface
+- **`App.tsx`** - Application shell and navigation
+- **`networkConfig.ts`** - Blockchain network configuration
+
+### Key Components
+- **Contract Creation** - Define terms and create new contracts
+- **Token Management** - Issue and track tokenized equity
+- **Dividend System** - Automatic dividend calculation and distribution
+- **Reward Pool** - Manages dividend payments and claims
+
+## 🧪 Testing
+
+The platform includes comprehensive integration tests that verify the complete contract lifecycle:
+
+```bash
+cd move/edu_defi
+sui move test
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🔗 Links
+
+- [Sui Documentation](https://docs.sui.io/)
+- [Move Programming Language](https://move-language.github.io/move/)
+- [Sui dApp Kit](https://sdk.mystenlabs.com/dapp-kit)
+
+## ⚠️ Disclaimer
+
+This is a demo application for educational and hackathon purposes. Do not use in production without proper security audits and testing.
 
 
 ## Team Members

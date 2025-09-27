@@ -15,19 +15,19 @@ import {
 
 const components: { title: string; href: string; description: string }[] = [
   {
-    title: "Counter",
-    href: "/counter",
-    description: "View and interact with the counter component.",
+    title: "Contract Lifecycle",
+    href: "#lifecycle",
+    description: "Experience the complete contract flow from creation to dividends.",
   },
   {
-    title: "Create Counter",
-    href: "/create",
-    description: "Create a new counter instance on the blockchain.",
+    title: "Student Dashboard",
+    href: "#student",
+    description: "Manage your contracts and dividend payments.",
   },
   {
-    title: "About",
-    href: "/about",
-    description: "Learn more about this counter application.",
+    title: "Investor Portal",
+    href: "#investor",
+    description: "Fund contracts and track your token investments.",
   },
 ];
 
@@ -39,26 +39,26 @@ export default function Navbar() {
           <NavigationMenuItem>
             <NavigationMenuLink asChild>
               <Link href="/" className="flex items-center space-x-2 font-semibold text-lg text-gray-900">
-                Counter App
+                📚 EduDeFi
               </Link>
             </NavigationMenuLink>
           </NavigationMenuItem>
           
           <NavigationMenuItem>
-            <NavigationMenuTrigger className="text-gray-900">Features</NavigationMenuTrigger>
+            <NavigationMenuTrigger className="text-gray-900">Platform</NavigationMenuTrigger>
             <NavigationMenuContent>
               <ul className="grid gap-3 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] bg-white">
                 <li className="row-span-3">
                   <NavigationMenuLink asChild>
                     <Link
-                      className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-slate-50 to-slate-100 p-6 no-underline outline-none focus:shadow-md"
+                      className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-blue-50 to-blue-100 p-6 no-underline outline-none focus:shadow-md"
                       href="/"
                     >
                       <div className="mb-2 mt-4 text-lg font-medium text-gray-900">
-                        Counter App
+                        EduDeFi Platform
                       </div>
                       <p className="text-sm leading-tight text-slate-600">
-                        A beautiful counter application built with Next.js and Tailwind CSS.
+                        Connecting students with investors through smart contracts and tokenized equity.
                       </p>
                     </Link>
                   </NavigationMenuLink>
