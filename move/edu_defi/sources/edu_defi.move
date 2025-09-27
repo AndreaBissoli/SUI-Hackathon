@@ -43,31 +43,6 @@ module edu_defi::edu_defi {
         vector::push_back(&mut registry.contracts, contract_address);
     }
 
-    // ============ Test Helper Functions ============
-    
-    #[test_only]
-    /// Create a ServiceRegistry for testing
-    public fun create_registry_for_testing(ctx: &mut TxContext): ServiceRegistry {
-        ServiceRegistry {
-            id: object::new(ctx),
-            students: vector::empty<address>(),
-            investors: vector::empty<address>(),
-            contracts: vector::empty<address>(),
-        }
-    }
-
-    #[test_only]
-    /// Get registry stats for testing
-    public fun get_registry_stats(registry: &ServiceRegistry): (u64, u64, u64) {
-        (
-            vector::length(&registry.students),
-            vector::length(&registry.investors), 
-            vector::length(&registry.contracts)
-        )
-    }
-
-    // ============ Wrapper Functions ============
-
     /// Create a student profile
     #[allow(lint(self_transfer))]
     public fun student_create_profile(
@@ -147,5 +122,27 @@ module edu_defi::edu_defi {
             ctx
         );
         add_contract(registry, contract_address);
+    }
+
+
+    #[test_only]
+    /// Create a ServiceRegistry for testing
+    public fun create_registry_for_testing(ctx: &mut TxContext): ServiceRegistry {
+        ServiceRegistry {
+            id: object::new(ctx),
+            students: vector::empty<address>(),
+            investors: vector::empty<address>(),
+            contracts: vector::empty<address>(),
+        }
+    }
+
+    #[test_only]
+    /// Get registry stats for testing
+    public fun get_registry_stats(registry: &ServiceRegistry): (u64, u64, u64) {
+        (
+            vector::length(&registry.students),
+            vector::length(&registry.investors), 
+            vector::length(&registry.contracts)
+        )
     }
 }
