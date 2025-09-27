@@ -3,46 +3,38 @@ module edu_defi::edu_defi {
     
     use edu_defi::student;
     use edu_defi::investor;
-    use edu_defi::contract;
     use sui::clock::Clock;
     use std::string::String;
-    use sui::vec_set::{Self, VecSet};
+    use sui::table::{Self as table, Table};
 
-    /// Service registry to manage all profiles and contracts
     public struct ServiceRegistry has key {
         id: UID,
-        students: VecSet<address>,    // Set of registered student addresses
-        investors: VecSet<address>,   // Set of registered investor addresses
-        contracts: vector<address>,    // Keeping vector for contracts as order matters
+        students: Table<address, bool>,
+        investors: Table<address, bool>,
+        contracts: vector<address>, // keep order if you really need it
     }
 
-    /// Initialization function
     fun init(ctx: &mut TxContext) {
         let registry = ServiceRegistry {
             id: object::new(ctx),
-            students: vec_set::empty(),
-            investors: vec_set::empty(),
+            students: table::new(ctx),
+            investors: table::new(ctx),
             contracts: vector::empty(),
         };
         transfer::share_object(registry);
     }
 
-    // ============ Registry Functions ============
-    
-    /// Add student to registry if not already present
-    fun add_student(registry: &mut ServiceRegistry, student_address: address) {
-        if (!vec_set::contains(&registry.students, &student_address)) {
-            vec_set::insert(&mut registry.students, student_address);
+    fun add_student(registry: &mut ServiceRegistry, a: address) {
+        if (!table::contains(&registry.students, a)) {
+            table::add(&mut registry.students, a, true);
         }
     }
 
-    /// Add investor to registry if not already present
-    fun add_investor(registry: &mut ServiceRegistry, investor_address: address) {
-        if (!vec_set::contains(&registry.investors, &investor_address)) {
-            vec_set::insert(&mut registry.investors, investor_address);
+    fun add_investor(registry: &mut ServiceRegistry, a: address) {
+        if (!table::contains(&registry.investors, a)) {
+            table::add(&mut registry.investors, a, true);
         }
     }
-
     /// Add contract to registry
     fun add_contract(registry: &mut ServiceRegistry, contract_address: address) {
         vector::push_back(&mut registry.contracts, contract_address);
@@ -131,23 +123,21 @@ module edu_defi::edu_defi {
 
 
     #[test_only]
-    /// Create a ServiceRegistry for testing
     public fun create_registry_for_testing(ctx: &mut TxContext): ServiceRegistry {
         ServiceRegistry {
             id: object::new(ctx),
-            students: vec_set::empty(),
-            investors: vec_set::empty(),
-            contracts: vector::empty(),
+            students: table::new(ctx),
+            investors: table::new(ctx),
+            contracts: vector::empty()
         }
     }
 
     #[test_only]
-    /// Get registry stats for testing
     public fun get_registry_stats(registry: &ServiceRegistry): (u64, u64, u64) {
         (
-            vec_set::length(&registry.students),
-            vec_set::length(&registry.investors), 
-            vector::length(&registry.contracts)
+            table::length(&registry.students),
+            table::length(&registry.investors),
+            vector::length(&registry.contracts),
         )
     }
 }
