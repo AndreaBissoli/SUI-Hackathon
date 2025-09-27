@@ -154,7 +154,7 @@ export function ContractLifecycle() {
         arguments: [
           tx.pure.address(studentAddress),
           tx.pure.string(pdfHash),
-          tx.pure.u64(parseInt(fundingAmount) * MIST_PER_SUI),
+          tx.pure.u64(Math.floor(parseFloat(fundingAmount) * MIST_PER_SUI)),
           tx.pure.u64(30), // 30 days release interval
           tx.pure.u64(parseInt(equityPercentage)),
           tx.pure.u64(parseInt(durationMonths)),
@@ -272,12 +272,17 @@ export function ContractLifecycle() {
     try {
       const tx = new Transaction();
       
-      // Create payment coin
+      // Get the actual funding amount from the contract
+      const contractFields = getContractFields(contractData);
+      const actualFundingAmount = contractFields ? contractFields.funding_amount : (parseFloat(fundingAmount) * MIST_PER_SUI);
+      
+      // Create payment coin with the actual contract funding amount
       const [coin] = tx.splitCoins(tx.gas, [
-        tx.pure.u64(parseInt(fundingAmount) * MIST_PER_SUI),
+        tx.pure.u64(actualFundingAmount),
       ]);
 
-      tx.moveCall({
+      // Fund contract and get student tokens
+      const [studentTokens] = tx.moveCall({
         target: `${packageId}::contract::fund_contract_with_tokens`,
         arguments: [
           tx.object(contractAddress),
@@ -285,6 +290,9 @@ export function ContractLifecycle() {
           tx.object('0x6'), // System clock
         ],
       });
+
+      // Transfer the student tokens to the investor (current user)
+      tx.transferObjects([studentTokens], tx.pure.address(currentAccount?.address!));
 
       signAndExecute(
         { transaction: tx },
@@ -310,15 +318,29 @@ export function ContractLifecycle() {
               if (!createdPool) {
                 createdPool = objectChanges?.find(
                   (change) => change.type === 'created' && 
-                  change.objectType.includes(packageId)
+                  change.objectType.includes(packageId) &&
+                  !change.objectType.includes('::Contract') // Exclude the contract itself
+                );
+              }
+
+              // If still not found, look for any shared object created
+              if (!createdPool) {
+                createdPool = objectChanges?.find(
+                  (change) => change.type === 'created' && 
+                  'owner' in change && 
+                  typeof change.owner === 'object' && 
+                  change.owner !== null &&
+                  'Shared' in change.owner
                 );
               }
 
               if (createdPool && 'objectId' in createdPool) {
                 console.log("Found created reward pool:", createdPool);
                 setRewardPoolAddress(createdPool.objectId);
+                setSuccess("Contract funded and tokens issued! Reward pool created.");
               } else {
-                console.log("No reward pool found, continuing without it");
+                console.log("No reward pool found, you may need to enter it manually in step 4");
+                setSuccess("Contract funded and tokens issued! (Reward pool not auto-detected)");
               }
 
               await refetchContract();
@@ -347,7 +369,7 @@ export function ContractLifecycle() {
       
       // Create payment coin
       const [coin] = tx.splitCoins(tx.gas, [
-        tx.pure.u64(parseInt(dividendAmount) * MIST_PER_SUI),
+        tx.pure.u64(Math.floor(parseFloat(dividendAmount) * MIST_PER_SUI)),
       ]);
 
       tx.moveCall({
@@ -395,13 +417,17 @@ export function ContractLifecycle() {
     try {
       const tx = new Transaction();
       
-      tx.moveCall({
+      // Claim dividend and get the dividend coins
+      const [dividendCoins] = tx.moveCall({
         target: `${packageId}::contract::claim_dividend_payment`,
         arguments: [
           tx.object(rewardPoolAddress),
           tx.pure.u64(0), // first dividend payment
         ],
       });
+
+      // Transfer the claimed dividend to the investor (current user)
+      tx.transferObjects([dividendCoins], tx.pure.address(currentAccount?.address!));
 
       signAndExecute(
         { transaction: tx },
@@ -540,8 +566,11 @@ export function ContractLifecycle() {
                     <label className="block text-sm font-medium mb-1">Funding (SUI)</label>
                     <Input
                       type="number"
+                      step="0.01"
+                      min="0"
                       value={fundingAmount}
                       onChange={(e) => setFundingAmount(e.target.value)}
+                      placeholder="e.g., 100.50"
                     />
                   </div>
                   <div>
@@ -599,6 +628,25 @@ export function ContractLifecycle() {
                     If not, please switch accounts in your wallet extension to the address that created the contract.
                   </p>
                 </div>
+                
+                {contractData && getContractFields(contractData) && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-gray-900 mb-2">Funding Details</h4>
+                    <div className="text-sm space-y-1">
+                      <div className="flex justify-between">
+                        <span>Required Amount:</span>
+                        <span className="font-mono">
+                          {(parseInt(getContractFields(contractData).funding_amount) / MIST_PER_SUI).toFixed(2)} SUI
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Equity Percentage:</span>
+                        <span>{getContractFields(contractData).equity_percentage}%</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <Button
                   onClick={fundContract}
                   disabled={loading}
@@ -618,21 +666,50 @@ export function ContractLifecycle() {
                     Use your wallet extension to switch accounts.
                   </p>
                 </div>
+                
+                {!rewardPoolAddress && (
+                  <div className="bg-yellow-50 p-4 rounded-lg">
+                    <p className="text-sm text-yellow-800 mb-2">
+                      <strong>Warning:</strong> Reward Pool address not detected. 
+                      Please enter it manually or go back to Step 3.
+                    </p>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Reward Pool Address</label>
+                      <Input
+                        value={rewardPoolAddress}
+                        onChange={(e) => setRewardPoolAddress(e.target.value)}
+                        placeholder="Enter reward pool address from Step 3"
+                        className="font-mono text-sm"
+                      />
+                    </div>
+                  </div>
+                )}
+                
                 <div>
                   <label className="block text-sm font-medium mb-1">Dividend Amount (SUI)</label>
                   <Input
                     type="number"
+                    step="0.01"
+                    min="0"
                     value={dividendAmount}
                     onChange={(e) => setDividendAmount(e.target.value)}
+                    placeholder="e.g., 10.25"
                   />
                 </div>
+                
                 <Button
                   onClick={payDividend}
-                  disabled={loading}
+                  disabled={loading || !contractAddress || !rewardPoolAddress}
                   className="w-full"
                 >
                   {loading ? <ClipLoader size={20} color="white" /> : "Pay Monthly Dividend"}
                 </Button>
+                
+                {(!contractAddress || !rewardPoolAddress) && (
+                  <p className="text-xs text-red-600 text-center">
+                    Button disabled: Missing {!contractAddress ? 'contract address' : 'reward pool address'}
+                  </p>
+                )}
               </>
             )}
 
