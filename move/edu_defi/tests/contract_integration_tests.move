@@ -151,15 +151,15 @@ module edu_defi::contract_integration_tests {
 
         // First dividend
         let dividend1 = mint_sui_for_testing(5, &mut scenario);
-        contract::pay_monthly_dividend(&contract, &mut reward_pool, dividend1, &clock, test_scenario::ctx(&mut scenario));
+        contract::pay_monthly_dividend(&contract, &mut reward_pool, dividend1, test_scenario::ctx(&mut scenario));
 
         // Second dividend
         let dividend2 = mint_sui_for_testing(7, &mut scenario);
-        contract::pay_monthly_dividend(&contract, &mut reward_pool, dividend2, &clock, test_scenario::ctx(&mut scenario));
+        contract::pay_monthly_dividend(&contract, &mut reward_pool, dividend2, test_scenario::ctx(&mut scenario));
 
         // Third dividend
         let dividend3 = mint_sui_for_testing(3, &mut scenario);
-        contract::pay_monthly_dividend(&contract, &mut reward_pool, dividend3, &clock, test_scenario::ctx(&mut scenario));
+        contract::pay_monthly_dividend(&contract, &mut reward_pool, dividend3, test_scenario::ctx(&mut scenario));
 
         // Check unclaimed dividends count
         test_scenario::next_tx(&mut scenario, INVESTOR_ADDR);
@@ -176,7 +176,6 @@ module edu_defi::contract_integration_tests {
         assert!(unclaimed_after == 0, 2);
 
         // Clean up
-        coin::burn_for_testing(student_tokens);
         coin::burn_for_testing(all_dividends);
         test_scenario::return_shared(contract);
         test_scenario::return_shared(reward_pool);
@@ -203,16 +202,15 @@ module edu_defi::contract_integration_tests {
 
         test_scenario::next_tx(&mut scenario, INVESTOR_ADDR);
         let payment = mint_sui_for_testing(100, &mut scenario);
-        let _student_tokens = contract::fund_contract_with_tokens(&mut contract, payment, &clock, test_scenario::ctx(&mut scenario));
+        contract::fund_contract_with_tokens(&mut contract, payment, &clock, test_scenario::ctx(&mut scenario));
 
         // Simulate token transfer
         test_scenario::next_tx(&mut scenario, ADMIN_ADDR);
         let mut reward_pool = test_scenario::take_shared<contract::RewardPool>(&mut scenario);
         
         // Transfer 300,000 tokens from INVESTOR_ADDR to second_investor
-        contract::update_token_distribution(
+        contract::transfer_tokens(
             &mut reward_pool,
-            INVESTOR_ADDR,
             second_investor,
             300_000,
             test_scenario::ctx(&mut scenario)
@@ -221,7 +219,7 @@ module edu_defi::contract_integration_tests {
         // Pay dividend and test distribution
         test_scenario::next_tx(&mut scenario, STUDENT_ADDR);
         let dividend = mint_sui_for_testing(10, &mut scenario);
-        contract::pay_monthly_dividend(&contract, &mut reward_pool, dividend, &clock, test_scenario::ctx(&mut scenario));
+        contract::pay_monthly_dividend(&contract, &mut reward_pool, dividend, test_scenario::ctx(&mut scenario));
 
         // Check unclaimed dividends for both investors
         let unclaimed_original = contract::get_unclaimed_dividends_count(&reward_pool, INVESTOR_ADDR);
@@ -242,7 +240,6 @@ module edu_defi::contract_integration_tests {
         assert!(amount_second == 3 * MIST_PER_SUI, 3);
 
         // Clean up
-        coin::burn_for_testing(_student_tokens);
         coin::burn_for_testing(dividend_original);
         coin::burn_for_testing(dividend_second);
         test_scenario::return_shared(contract);
@@ -290,12 +287,12 @@ module edu_defi::contract_integration_tests {
 
         test_scenario::next_tx(&mut scenario, INVESTOR_ADDR);
         let payment = mint_sui_for_testing(100, &mut scenario);
-        let _student_tokens = contract::fund_contract_with_tokens(&mut contract, payment, &clock, test_scenario::ctx(&mut scenario));
+        contract::fund_contract_with_tokens(&mut contract, payment, &clock, test_scenario::ctx(&mut scenario));
 
         test_scenario::next_tx(&mut scenario, STUDENT_ADDR);
         let mut reward_pool = test_scenario::take_shared<contract::RewardPool>(&mut scenario);
         let dividend = mint_sui_for_testing(10, &mut scenario);
-        contract::pay_monthly_dividend(&contract, &mut reward_pool, dividend, &clock, test_scenario::ctx(&mut scenario));
+        contract::pay_monthly_dividend(&contract, &mut reward_pool, dividend,  test_scenario::ctx(&mut scenario));
 
         // First claim (should succeed)
         test_scenario::next_tx(&mut scenario, INVESTOR_ADDR);
@@ -304,7 +301,6 @@ module edu_defi::contract_integration_tests {
         // Second claim (should fail)
         let second_claim = contract::claim_dividend_payment(&mut reward_pool, 0, test_scenario::ctx(&mut scenario));
 
-        coin::burn_for_testing(_student_tokens);
         coin::burn_for_testing(first_claim);
         coin::burn_for_testing(second_claim);
         test_scenario::return_shared(contract);
