@@ -2,7 +2,8 @@
 module edu_defi::edu_defi {
     
     use edu_defi::student;
-    use edu_defi::investor;
+    use edu_defi::investor::{Self, Investor};
+    use edu_defi::contract;
     use sui::clock::Clock;
     use std::string::String;
     use sui::table::{Self as table, Table};
@@ -98,6 +99,7 @@ module edu_defi::edu_defi {
 
     /// Investor proposes a contract to a student
     public fun investor_propose_contract(
+        investor: Investor,
         student_address: address,
         pdf_hash: String,
         funding_amount: u64,
@@ -108,6 +110,7 @@ module edu_defi::edu_defi {
         clock: &Clock,
         ctx: &mut TxContext
     ) {
+        assert!(table::contains(&registry.investors, investor::get_address(&investor)), 1);
         let contract_address = contract::create_and_share_contract(
             student_address,
             pdf_hash,
@@ -119,6 +122,7 @@ module edu_defi::edu_defi {
             ctx
         );
         add_contract(registry, contract_address);
+        // TODO
     }
 
 

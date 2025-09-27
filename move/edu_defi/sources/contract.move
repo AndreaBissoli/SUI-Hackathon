@@ -48,16 +48,15 @@ module edu_defi::contract {
         student_address: address,
         investor_address: address,
         pdf_hash: String,
-        funding_amount: u64,
-        release_interval_days: u64,
-        equity_percentage: u64,
+        funding_amount: u64, // Total funding amount by the investore
+        release_interval_days: u64,  // Interval in days for fund release
+        equity_percentage: u64, // Equity in the student owned by investor
         duration_months: u64,
-        balance: Balance<SUI>,
-        funds_released: u64,
+        balance: Balance<SUI>, // Amount of money put by the student in the pool 
+        funds_released: u64, 
         next_release_time: u64,
         student_monthly_income: u64,
         is_active: bool,
-        created_at: u64,
         // Nuovi campi per il sistema di token
         reward_pool_id: Option<ID>,
         has_tokens_issued: bool,
@@ -94,7 +93,6 @@ module edu_defi::contract {
             next_release_time: clock::timestamp_ms(clock) + (release_interval_days * 24 * 60 * 60 * 1000),
             student_monthly_income: 0,
             is_active: false,
-            created_at: clock::timestamp_ms(clock),
             reward_pool_id: option::none(),
             has_tokens_issued: false,
         };
@@ -118,25 +116,7 @@ module edu_defi::contract {
         contract.is_active = true;
     }
 
-    /// Test version of fund_contract_with_tokens that doesn't create currency
-    #[test_only]
-    public fun fund_contract_with_tokens_test(
-        contract: &mut Contract,
-        payment: Coin<SUI>,
-        _clock: &Clock,
-        ctx: &mut TxContext
-    ) {
-        assert!(contract.investor_address == tx_context::sender(ctx), E_UNAUTHORIZED);
-        
-        let payment_amount = coin::value(&payment);
-        assert!(payment_amount >= contract.funding_amount, E_INSUFFICIENT_FUNDS);
-        
-        // Add payment to contract balance
-        let payment_balance = coin::into_balance(payment);
-        balance::join(&mut contract.balance, payment_balance);
-        
-        contract.has_tokens_issued = true;
-    }
+    
 
     /// Production version - Investor funds contract and receives student tokens
     public fun fund_contract_with_tokens(
@@ -350,5 +330,25 @@ module edu_defi::contract {
     public fun get_info(contract: &Contract): (address, address, String, u64, u64, u64, bool) {
         (contract.student_address, contract.investor_address, contract.pdf_hash,
          contract.funding_amount, contract.equity_percentage, contract.duration_months, contract.is_active)
+    }
+
+    /// Test version of fund_contract_with_tokens that doesn't create currency
+    #[test_only]
+    public fun fund_contract_with_tokens_test(
+        contract: &mut Contract,
+        payment: Coin<SUI>,
+        _clock: &Clock,
+        ctx: &mut TxContext
+    ) {
+        assert!(contract.investor_address == tx_context::sender(ctx), E_UNAUTHORIZED);
+        
+        let payment_amount = coin::value(&payment);
+        assert!(payment_amount >= contract.funding_amount, E_INSUFFICIENT_FUNDS);
+        
+        // Add payment to contract balance
+        let payment_balance = coin::into_balance(payment);
+        balance::join(&mut contract.balance, payment_balance);
+        
+        contract.has_tokens_issued = true;
     }
 }
