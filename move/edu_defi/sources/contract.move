@@ -7,17 +7,10 @@ module edu_defi::contract {
     use sui::vec_map::{Self, VecMap};
     use edu_defi::errors;
 
-    /// Student token witness for creating currency
-    public struct STUDENT_TOKEN has drop {}
-
-    /// Student token for equity tracking  
-    public struct StudentToken has drop {}
-
     /// Dividend payment record
     public struct DividendPayment has store {
         payment_id: u64,
         total_amount: u64,
-        payment_timestamp: u64,
         token_snapshot: VecMap<address, u64>,
         claimed_by: vector<address>,
     }
@@ -110,38 +103,39 @@ module edu_defi::contract {
 
     
 
-    /// Production version - Investor funds contract and receives student tokens
+    // Unfortunately Move does not support minting many different coins from the same function (yet) as it's a beta feature
+    // So we will track the stake of investors in a map.
     public fun fund_contract_with_tokens(
         contract: &mut Contract,
         payment: Coin<SUI>,
         _clock: &Clock,
         ctx: &mut TxContext
-    ): Coin<StudentToken> {
+    ) {
         assert!(contract.investor_address == tx_context::sender(ctx), errors::unauthorized());
         assert!(contract.is_active, errors::contract_not_found());
         assert!(!contract.has_tokens_issued, errors::unauthorized()); // Tokens possono essere emessi solo una volta
         
         let payment_amount = coin::value(&payment);
-        assert!(payment_amount >= contract.funding_amount, errors::insufficient_funds());
+        assert!(payment_amount == contract.funding_amount, errors::insufficient_funds());
         
         // Add payment to contract balance
         let payment_balance = coin::into_balance(payment);
         balance::join(&mut contract.balance, payment_balance);
         
         // Create student tokens (test version - creates zero coin for simplicity)
-        let token_supply = 1000000;
-        let token_balance = balance::zero<StudentToken>();
-        let investor_tokens = coin::from_balance(token_balance, ctx);
+        let token_cap = 10000000;
         
+       
         // Create reward pool for dividend management
+        //* TODO: Use table */
         let mut token_holders = vec_map::empty<address, u64>();
-        vec_map::insert(&mut token_holders, tx_context::sender(ctx), token_supply);
+        vec_map::insert(&mut token_holders, tx_context::sender(ctx), token_cap);
         
         let reward_pool = RewardPool {
             id: object::new(ctx),
             student_address: contract.student_address,
             contract_id: object::id(contract),
-            total_token_supply: token_supply,
+            total_token_supply: token_cap,
             current_token_holders: token_holders,
             dividend_payments: vector::empty<DividendPayment>(),
             next_payment_id: 0,
@@ -153,8 +147,6 @@ module edu_defi::contract {
         contract.has_tokens_issued = true;
         
         transfer::share_object(reward_pool);
-        
-        investor_tokens
     }
 
     /// Student pays monthly dividend
@@ -162,7 +154,6 @@ module edu_defi::contract {
         contract: &Contract,
         reward_pool: &mut RewardPool,
         payment: Coin<SUI>,
-        clock: &Clock,
         ctx: &mut TxContext
     ) {
         assert!(contract.student_address == tx_context::sender(ctx), errors::unauthorized());
@@ -173,12 +164,11 @@ module edu_defi::contract {
         let monthly_equity = (contract.student_monthly_income * contract.equity_percentage) / 100;
         assert!(payment_amount >= monthly_equity, errors::insufficient_funds());
         
-        // Crea snapshot della distribuzione token attuale (DIVIDEND RECORD DATE)
+        // Snapshot of current token distribution
         let dividend_payment = DividendPayment {
             payment_id: reward_pool.next_payment_id,
             total_amount: payment_amount,
-            payment_timestamp: clock::timestamp_ms(clock),
-            token_snapshot: reward_pool.current_token_holders, // SNAPSHOT!
+            token_snapshot: reward_pool.current_token_holders,
             claimed_by: vector::empty<address>(),
         };
         
@@ -310,12 +300,12 @@ module edu_defi::contract {
     public fun get_dividend_payment_info(
         reward_pool: &RewardPool,
         payment_id: u64
-    ): (u64, u64, u64) {
+    ): (u64, u64) {
         let payments_length = vector::length(&reward_pool.dividend_payments);
         assert!(payment_id < payments_length, errors::contract_not_found());
         
         let dividend_payment = vector::borrow(&reward_pool.dividend_payments, payment_id);
-        (dividend_payment.payment_id, dividend_payment.total_amount, dividend_payment.payment_timestamp)
+        (dividend_payment.payment_id, dividend_payment.total_amount)
     }
 
     /// Get contract information

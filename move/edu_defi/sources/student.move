@@ -2,8 +2,6 @@ module edu_defi::student {
     use sui::clock::{Self, Clock};
     use std::string::String;
     use edu_defi::errors;
-    // ============ Error Codes ============
-
 
     /// Student profile structure
     public struct Student has key, store {
