@@ -31,26 +31,61 @@ export function ContractLifecycle() {
   const currentAccount = useCurrentAccount();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
 
-  // State management
-  const [step, setStep] = useState(1);
+  // State management with localStorage persistence
+  const [step, setStep] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedStep = localStorage.getItem('edudefi_current_step');
+      return savedStep ? parseInt(savedStep) : 1;
+    }
+    return 1;
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
   // Contract creation inputs
-  const [packageId, setPackageId] = useState("");
-  const [studentAddress, setStudentAddress] = useState("0xA");
+  const [packageId, setPackageId] = useState("0x7a725cf115212bd74d2e2d9233b046f17608190e3280aad3f290a2975623a5a4");
+  const [studentAddress, setStudentAddress] = useState("");
   const [pdfHash, setPdfHash] = useState("contract_pdf_hash");
   const [fundingAmount, setFundingAmount] = useState("100");
   const [equityPercentage, setEquityPercentage] = useState("20");
   const [durationMonths, setDurationMonths] = useState("24");
   
-  // Contract state
-  const [contractAddress, setContractAddress] = useState("");
-  const [rewardPoolAddress, setRewardPoolAddress] = useState("");
+  // Contract state with localStorage persistence
+  const [contractAddress, setContractAddress] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('edudefi_contract_address') || "";
+    }
+    return "";
+  });
+  const [rewardPoolAddress, setRewardPoolAddress] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('edudefi_reward_pool_address') || "";
+    }
+    return "";
+  });
   const [dividendAmount, setDividendAmount] = useState("10");
   
   const MIST_PER_SUI = 1_000_000_000;
+
+  // Persist state changes to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('edudefi_current_step', step.toString());
+    }
+  }, [step]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && contractAddress) {
+      localStorage.setItem('edudefi_contract_address', contractAddress);
+    }
+  }, [contractAddress]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && rewardPoolAddress) {
+      localStorage.setItem('edudefi_reward_pool_address', rewardPoolAddress);
+    }
+  }, [rewardPoolAddress]);
 
   // Query contract data
   const { data: contractData, refetch: refetchContract } = useSuiClientQuery("getObject", {
@@ -80,6 +115,13 @@ export function ContractLifecycle() {
     setSuccess(null);
     setContractAddress("");
     setRewardPoolAddress("");
+    
+    // Clear localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('edudefi_current_step');
+      localStorage.removeItem('edudefi_contract_address');
+      localStorage.removeItem('edudefi_reward_pool_address');
+    }
   };
 
   const handleError = (err: any, context: string) => {
@@ -95,8 +137,8 @@ export function ContractLifecycle() {
 
   // Step 1: Create Contract
   const createContract = async () => {
-    if (!packageId || !eduDefiPackageId) {
-      setError("Please enter the package ID");
+    if (!packageId || !studentAddress) {
+      setError("Please enter the package ID and student address");
       return;
     }
 
@@ -105,14 +147,8 @@ export function ContractLifecycle() {
 
     try {
       const tx = new Transaction();
-      
-      // Create clock for testing
-      const clockArg = tx.moveCall({
-        target: `0x2::clock::create_for_testing`,
-        arguments: [],
-      });
 
-      // Create contract
+      // Create contract - use system clock (0x6 is the system clock object)
       tx.moveCall({
         target: `${packageId}::contract::create_and_share_contract`,
         arguments: [
@@ -122,7 +158,7 @@ export function ContractLifecycle() {
           tx.pure.u64(30), // 30 days release interval
           tx.pure.u64(parseInt(equityPercentage)),
           tx.pure.u64(parseInt(durationMonths)),
-          clockArg,
+          tx.object('0x6'), // System clock
         ],
       });
 
@@ -130,28 +166,51 @@ export function ContractLifecycle() {
         { transaction: tx },
         {
           onSuccess: async ({ digest }) => {
-            const { effects, objectChanges } = await suiClient.waitForTransaction({
+            suiClient.waitForTransaction({ 
               digest,
               options: {
                 showEffects: true,
                 showObjectChanges: true,
               },
+            }).then(async (result) => {
+              const { effects, objectChanges } = result;
+
+              console.log("Transaction result:", result);
+              console.log("Object changes:", objectChanges);
+              console.log("Effects:", effects);
+
+              // Find the created contract - try multiple matching strategies
+              let createdContract = objectChanges?.find(
+                (change) => change.type === 'created' && 
+                change.objectType.includes('::Contract')
+              );
+
+              // If not found, try looking for any created object from our package
+              if (!createdContract) {
+                createdContract = objectChanges?.find(
+                  (change) => change.type === 'created' && 
+                  change.objectType.includes(packageId)
+                );
+              }
+
+              // If still not found, try the first created object (might be the contract)
+              if (!createdContract) {
+                createdContract = objectChanges?.find(
+                  (change) => change.type === 'created'
+                );
+              }
+
+              if (createdContract && 'objectId' in createdContract) {
+                console.log("Found created contract:", createdContract);
+                setContractAddress(createdContract.objectId);
+                setSuccess("Contract created successfully!");
+                setStep(2);
+              } else {
+                console.log("No contract found in object changes:", objectChanges);
+                setError("Contract creation failed - no contract found in transaction. Check console for details.");
+              }
+              setLoading(false);
             });
-
-            // Find the created contract
-            const createdContract = objectChanges?.find(
-              (change) => change.type === 'created' && 
-              change.objectType.includes('::contract::Contract')
-            );
-
-            if (createdContract && 'objectId' in createdContract) {
-              setContractAddress(createdContract.objectId);
-              setSuccess("Contract created successfully!");
-              setStep(2);
-            } else {
-              setError("Contract creation failed - no contract found in transaction");
-            }
-            setLoading(false);
           },
           onError: (err) => handleError(err, "Contract creation failed"),
         }
@@ -181,12 +240,19 @@ export function ContractLifecycle() {
       signAndExecute(
         { transaction: tx },
         {
-          onSuccess: async ({ digest }) => {
-            await suiClient.waitForTransaction({ digest });
-            await refetchContract();
-            setSuccess("Contract accepted successfully!");
-            setStep(3);
-            setLoading(false);
+          onSuccess: (result) => {
+            suiClient.waitForTransaction({ 
+              digest: result.digest,
+              options: {
+                showEffects: true,
+                showObjectChanges: true,
+              },
+            }).then(async () => {
+              await refetchContract();
+              setSuccess("Contract accepted successfully!");
+              setStep(3);
+              setLoading(false);
+            });
           },
           onError: (err) => handleError(err, "Contract acceptance failed"),
         }
@@ -211,46 +277,55 @@ export function ContractLifecycle() {
         tx.pure.u64(parseInt(fundingAmount) * MIST_PER_SUI),
       ]);
 
-      // Create clock
-      const clockArg = tx.moveCall({
-        target: `0x2::clock::create_for_testing`,
-        arguments: [],
-      });
-
       tx.moveCall({
         target: `${packageId}::contract::fund_contract_with_tokens`,
         arguments: [
           tx.object(contractAddress),
           coin,
-          clockArg,
+          tx.object('0x6'), // System clock
         ],
       });
 
       signAndExecute(
         { transaction: tx },
         {
-          onSuccess: async ({ digest }) => {
-            const { objectChanges } = await suiClient.waitForTransaction({
-              digest,
+          onSuccess: (result) => {
+            suiClient.waitForTransaction({ 
+              digest: result.digest,
               options: {
                 showObjectChanges: true,
               },
+            }).then(async (txResult) => {
+              const { objectChanges } = txResult;
+
+              console.log("Fund contract - Object changes:", objectChanges);
+
+              // Find the created reward pool - try multiple strategies
+              let createdPool = objectChanges?.find(
+                (change) => change.type === 'created' && 
+                change.objectType.includes('::RewardPool')
+              );
+
+              // If not found, try looking for any new shared object
+              if (!createdPool) {
+                createdPool = objectChanges?.find(
+                  (change) => change.type === 'created' && 
+                  change.objectType.includes(packageId)
+                );
+              }
+
+              if (createdPool && 'objectId' in createdPool) {
+                console.log("Found created reward pool:", createdPool);
+                setRewardPoolAddress(createdPool.objectId);
+              } else {
+                console.log("No reward pool found, continuing without it");
+              }
+
+              await refetchContract();
+              setSuccess("Contract funded and tokens issued!");
+              setStep(4);
+              setLoading(false);
             });
-
-            // Find the created reward pool
-            const createdPool = objectChanges?.find(
-              (change) => change.type === 'created' && 
-              change.objectType.includes('::contract::RewardPool')
-            );
-
-            if (createdPool && 'objectId' in createdPool) {
-              setRewardPoolAddress(createdPool.objectId);
-            }
-
-            await refetchContract();
-            setSuccess("Contract funded and tokens issued!");
-            setStep(4);
-            setLoading(false);
           },
           onError: (err) => handleError(err, "Contract funding failed"),
         }
@@ -275,31 +350,32 @@ export function ContractLifecycle() {
         tx.pure.u64(parseInt(dividendAmount) * MIST_PER_SUI),
       ]);
 
-      // Create clock
-      const clockArg = tx.moveCall({
-        target: `0x2::clock::create_for_testing`,
-        arguments: [],
-      });
-
       tx.moveCall({
         target: `${packageId}::contract::pay_monthly_dividend`,
         arguments: [
           tx.object(contractAddress),
           tx.object(rewardPoolAddress),
           coin,
-          clockArg,
+          tx.object('0x6'), // System clock
         ],
       });
 
       signAndExecute(
         { transaction: tx },
         {
-          onSuccess: async ({ digest }) => {
-            await suiClient.waitForTransaction({ digest });
-            await refetchRewardPool();
-            setSuccess("Dividend paid successfully!");
-            setStep(5);
-            setLoading(false);
+          onSuccess: (result) => {
+            suiClient.waitForTransaction({ 
+              digest: result.digest,
+              options: {
+                showEffects: true,
+                showObjectChanges: true,
+              },
+            }).then(async () => {
+              await refetchRewardPool();
+              setSuccess("Dividend paid successfully!");
+              setStep(5);
+              setLoading(false);
+            });
           },
           onError: (err) => handleError(err, "Dividend payment failed"),
         }
@@ -330,12 +406,19 @@ export function ContractLifecycle() {
       signAndExecute(
         { transaction: tx },
         {
-          onSuccess: async ({ digest }) => {
-            await suiClient.waitForTransaction({ digest });
-            await refetchRewardPool();
-            setSuccess("Dividend claimed successfully!");
-            setStep(6);
-            setLoading(false);
+          onSuccess: (result) => {
+            suiClient.waitForTransaction({ 
+              digest: result.digest,
+              options: {
+                showEffects: true,
+                showObjectChanges: true,
+              },
+            }).then(async () => {
+              await refetchRewardPool();
+              setSuccess("Dividend claimed successfully!");
+              setStep(6);
+              setLoading(false);
+            });
           },
           onError: (err) => handleError(err, "Dividend claim failed"),
         }
@@ -434,12 +517,16 @@ export function ContractLifecycle() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Student Address</label>
+                  <label className="block text-sm font-medium mb-1">Student Address *</label>
                   <Input
                     value={studentAddress}
                     onChange={(e) => setStudentAddress(e.target.value)}
+                    placeholder="Enter student's wallet address"
                     className="font-mono text-sm"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enter the wallet address of the student who will receive funding
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">PDF Hash</label>
@@ -477,7 +564,7 @@ export function ContractLifecycle() {
                 </div>
                 <Button
                   onClick={createContract}
-                  disabled={loading || !packageId}
+                  disabled={loading || !packageId || !studentAddress}
                   className="w-full"
                 >
                   {loading ? <ClipLoader size={20} color="white" /> : "Create Contract"}
@@ -489,8 +576,9 @@ export function ContractLifecycle() {
               <>
                 <div className="bg-yellow-50 p-4 rounded-lg">
                   <p className="text-sm text-yellow-800">
-                    <strong>Note:</strong> You need to switch to the student address to accept the contract.
-                    Use the terminal: <code>sui client switch --address student</code>
+                    <strong>Note:</strong> Make sure your wallet is connected to the student address: <br/>
+                    <code className="break-all">{studentAddress}</code><br/>
+                    If not, please switch accounts in your wallet extension.
                   </p>
                 </div>
                 <Button
@@ -507,8 +595,8 @@ export function ContractLifecycle() {
               <>
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <p className="text-sm text-blue-800">
-                    <strong>Note:</strong> Switch back to the investor address to fund the contract.
-                    Use: <code>sui client switch --address investor</code>
+                    <strong>Note:</strong> Make sure your wallet is connected to the investor address (contract creator).<br/>
+                    If not, please switch accounts in your wallet extension to the address that created the contract.
                   </p>
                 </div>
                 <Button
@@ -525,8 +613,9 @@ export function ContractLifecycle() {
               <>
                 <div className="bg-green-50 p-4 rounded-lg">
                   <p className="text-sm text-green-800">
-                    <strong>Note:</strong> Switch to student address to pay dividend.
-                    Use: <code>sui client switch --address student</code>
+                    <strong>Note:</strong> Switch to the student address in your wallet: <br/>
+                    <code className="break-all">{studentAddress}</code><br/>
+                    Use your wallet extension to switch accounts.
                   </p>
                 </div>
                 <div>
@@ -551,8 +640,8 @@ export function ContractLifecycle() {
               <>
                 <div className="bg-purple-50 p-4 rounded-lg">
                   <p className="text-sm text-purple-800">
-                    <strong>Note:</strong> Switch to investor address to claim dividend.
-                    Use: <code>sui client switch --address investor</code>
+                    <strong>Note:</strong> Switch back to the investor address (contract creator) in your wallet.<br/>
+                    Use your wallet extension to switch to the account that created and funded the contract.
                   </p>
                 </div>
                 <Button
@@ -633,6 +722,28 @@ export function ContractLifecycle() {
               <p className="text-xs text-blue-800 font-mono break-all">
                 {currentAccount?.address}
               </p>
+              <div className="mt-2 text-xs">
+                <span className="font-medium text-blue-900">Expected Role: </span>
+                <span className={`px-2 py-1 rounded ${
+                  step === 1 || step === 3 || step === 5 
+                    ? 'bg-blue-200 text-blue-800' 
+                    : 'bg-yellow-200 text-yellow-800'
+                }`}>
+                  {step === 1 || step === 3 || step === 5 ? 'Investor' : 'Student'}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-green-50 p-4 rounded-lg">
+              <h4 className="font-semibold text-green-900 mb-2">🔄 Account Switching</h4>
+              <p className="text-xs text-green-800 mb-2">
+                To switch accounts for different roles:
+              </p>
+              <ol className="text-xs text-green-700 space-y-1 list-decimal list-inside">
+                <li>Click disconnect in your wallet</li>
+                <li>Connect with the required account</li>
+                <li>Your progress is saved automatically!</li>
+              </ol>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
@@ -645,6 +756,20 @@ export function ContractLifecycle() {
                 <li>Claim dividend (investor)</li>
                 <li>Complete! 🎉</li>
               </ol>
+            </div>
+
+            <div className="bg-orange-50 p-4 rounded-lg">
+              <h4 className="font-semibold text-orange-900 mb-2">🔄 Role Information</h4>
+              <p className="text-sm text-orange-800 mb-2">
+                For this demo, you have 2 roles:
+              </p>
+              <ul className="text-xs text-orange-700 space-y-1">
+                <li><strong>Investor (You):</strong> Current wallet - creates and funds contracts</li>
+                <li><strong>Student:</strong> Target address - accepts contracts and pays dividends</li>
+              </ul>
+              <p className="text-xs text-orange-700 mt-2">
+                You'll need to switch to the student's wallet for steps 2 & 4.
+              </p>
             </div>
           </CardContent>
         </Card>
