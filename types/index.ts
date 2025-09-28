@@ -4,7 +4,7 @@ export interface Student {
   name: string;
   surname: string;
   age: number;
-  cvHash: string;
+  cvUrl: string;
   profileImage: string;
   fundingRequested: number;
   equityPercentage: number;

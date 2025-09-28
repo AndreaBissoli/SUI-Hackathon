@@ -11,7 +11,6 @@ import {
   Check,
   X,
   ExternalLink,
-  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -27,21 +26,43 @@ import {
 } from "@/lib/sui-transactions";
 import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { REGISTRY_ID, walrusClient } from "@/lib/sui-client";
+import { getUserProfileByAddress } from "@/lib/sui-queries";
+import { useEffect, useState } from "react";
 
 const ContractCard = ({ contract }: { contract: Contract }) => {
   const { account, userProfile, isInvestor, isStudent, refreshProfile } =
     useAuth();
-  console.log(contract)
-    const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+  const [otherPartyProfile, setOtherPartyProfile] = useState<any>(null);
 
+  // Determina l'altra parte del contratto
   const otherPartyAddress = isStudent
     ? contract.investorAddress
     : contract.studentAddress;
+  const otherPartyType = isStudent ? "investor" : "student";
 
+  useEffect(() => {
+    const loadOtherPartyProfile = async () => {
+      if (!otherPartyAddress) return;
+
+      try {
+        const profile = await getUserProfileByAddress(otherPartyAddress);
+        setOtherPartyProfile(profile.data);
+      } catch (error) {
+        console.error("Error loading other party profile:", error);
+        setOtherPartyProfile(null);
+      }
+    };
+
+    loadOtherPartyProfile();
+  }, [otherPartyAddress]);
+
+  // Formatta i SUI (da nanoSUI a SUI)
   const formatSUI = (amount: number) => {
-    return (amount / 1_000_000_000).toFixed(2);
+    return (amount / 1000000000).toFixed(2);
   };
 
+  // Gestori per accettare/rifiutare il contratto
   const handleAcceptContract = async () => {
     if (!account) return;
 
@@ -84,7 +105,10 @@ const ContractCard = ({ contract }: { contract: Contract }) => {
     refreshProfile();
   };
   const handleViewContract = () => {
-    window.open(`https://aggregator.walrus-testnet.walrus.space/v1/blobs/${contract.walrus_id}`, "_blank");
+    window.open(
+      `https://aggregator.walrus-testnet.walrus.space/v1/blobs/${contract.walrus_id}`,
+      "_blank"
+    );
     /*walrusClient.readBlob({ blobId: contract.walrus_id }).then((blob) => {
       const file = new Blob([new Uint8Array(blob)], { type: "application/pdf" });
       const fileUrl = URL.createObjectURL(file);
@@ -100,7 +124,7 @@ const ContractCard = ({ contract }: { contract: Contract }) => {
             Contract #{contract.id.slice(0, 8)}...
           </CardTitle>
           <Badge
-            variant={contract.isActive ? "success" : "secondary"}
+            variant={contract.isActive ? "default" : "secondary"}
             className="w-fit"
           >
             {contract.isActive ? "Active" : "Pending"}
@@ -108,67 +132,55 @@ const ContractCard = ({ contract }: { contract: Contract }) => {
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+      <CardContent className="space-y-4">
+        {/* Informazioni principali del contratto */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <DollarSign className="h-4 w-4" />
-              <span>Funding Amount</span>
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                Funding Amount
+              </span>
             </div>
-            <p className="text-base font-semibold">
+            <p className="text-lg font-semibold">
               {formatSUI(contract.fundingAmount)} SUI
             </p>
           </div>
 
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Percent className="h-4 w-4" />
-              <span>Equity</span>
+            <div className="flex items-center gap-2">
+              <Percent className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Equity</span>
             </div>
-            <p className="text-base font-semibold">
+            <p className="text-lg font-semibold">
               {contract.equityPercentage}%
             </p>
           </div>
 
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              <span>Duration</span>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Duration</span>
             </div>
-            <p className="text-base font-semibold">
+            <p className="text-lg font-semibold">
               {contract.durationMonths} months
             </p>
           </div>
 
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              <span>Release Interval</span>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                Release Interval
+              </span>
             </div>
-            <p className="text-base font-semibold">
+            <p className="text-lg font-semibold">
               {contract.releaseIntervalDays} days
             </p>
           </div>
         </div>
 
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 border rounded-lg">
-            <div className="flex items-center gap-3">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <div className="font-medium">Investment Contract</div>
-                <div className="text-xs text-muted-foreground">
-                  PDF Document on Walrus
-                </div>
-              </div>
-            </div>
-            <Button size="sm" variant="outline" onClick={handleViewContract}>
-              View
-              <ExternalLink className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
-        </div>
-
+        {/* Link all'altra parte */}
         <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">
@@ -179,9 +191,10 @@ const ContractCard = ({ contract }: { contract: Contract }) => {
             </p>
           </div>
           <Button variant="outline" size="sm" asChild>
-            <Link href={`/profile/${otherPartyAddress}`}>
+            <Link href={`/${otherPartyType}s/${otherPartyProfile?.objectId}`}>
               <User className="h-4 w-4 mr-2" />
               View Profile
+              <ExternalLink className="h-4 w-4 ml-2" />
             </Link>
           </Button>
         </div>
@@ -190,57 +203,46 @@ const ContractCard = ({ contract }: { contract: Contract }) => {
         {!contract.isActive && isStudent && (
           <div className="flex flex-col sm:flex-row gap-2 p-3 border border-amber-200 bg-amber-50 rounded-lg">
             <div className="flex-1">
-              <p
-                className={`text-sm font-medium ${
-                  isStudent ? "text-amber-800" : "text-blue-800"
-                }`}
-              >
-                {isStudent ? "Action Required" : "Contract Proposed"}
+              <p className="text-sm font-medium text-amber-800">
+                Contract Pending
               </p>
-              <p
-                className={`text-xs ${
-                  isStudent ? "text-amber-600" : "text-blue-600"
-                }`}
-              >
-                {isStudent
-                  ? "Please review and respond to this contract proposal."
-                  : "You have proposed this contract. Waiting for the student to respond."}
+              <p className="text-xs text-amber-600">
+                This contract is waiting for acceptance from both parties.
               </p>
             </div>
-            {isStudent && (
-              <div className="flex gap-2 self-start sm:self-center">
-                <Button
-                  onClick={handleAcceptContract}
-                  size="sm"
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <Check className="h-4 w-4 mr-1" />
-                  Accept
-                </Button>
-                <Button
-                  onClick={handleRejectContract}
-                  variant="destructive"
-                  size="sm"
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Reject
-                </Button>
-              </div>
-            )}
+            <div className="flex gap-2">
+              <Button
+                onClick={handleAcceptContract}
+                size="sm"
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Check className="h-4 w-4 mr-1" />
+                Accept
+              </Button>
+              <Button
+                onClick={handleRejectContract}
+                variant="destructive"
+                size="sm"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Reject
+              </Button>
+            </div>
           </div>
         )}
 
+        {/* Informazioni  per contratti attivi */}
         {contract.isActive && (
           <div className="grid grid-cols-2 gap-4 p-3 bg-green-50 border border-green-200 rounded-lg">
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Funds Released</p>
-              <p className="font-semibold">
+              <p className="text-sm font-semibold">
                 {formatSUI(contract.fundsReleased)} SUI
               </p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Next Release</p>
-              <p className="font-semibold">
+              <p className="text-sm font-semibold">
                 {new Date(contract.nextReleaseTime).toLocaleDateString()}
               </p>
             </div>
@@ -250,6 +252,5 @@ const ContractCard = ({ contract }: { contract: Contract }) => {
     </Card>
   );
 };
-
 
 export default ContractCard;

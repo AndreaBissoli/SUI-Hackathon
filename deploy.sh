@@ -1,5 +1,5 @@
-PACKAGE="0xb5fd1f9539b10a459627c54f056a24e2ba9110fb961d415628cdcd533bbcfb9d"
-REGISTRY="0x4d43d5f392296606eee92a4ddeca11d61ec38b8335e045ec4b1001438db90ccf"
+PACKAGE="0xf5ae67db18c0929481348a24f32c52787107deb11ad549e73e3e4ff9921b5be0"
+REGISTRY="0x861f29bdb779549231e6e177c26b519364246a8603c77ca8a1087f51928a1128"
 
 # CREATE INVESTORS
 
@@ -53,7 +53,7 @@ sui client call \
     "Filippo" \
     "Viacala" \
     25 \
-    "cv_hash_123" \
+    "cv_url_123" \
     "profile_img_url" \
     100000 \
     20 \
@@ -71,7 +71,7 @@ sui client call \
     "Francesco" \
     "Pianola" \
     25 \
-    "cv_hash_123" \
+    "cv_url_123" \
     "profile_img_url" \
     100000 \
     20 \

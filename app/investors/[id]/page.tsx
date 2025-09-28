@@ -6,7 +6,7 @@ import { Navigation } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { fetchInvestors, fetchContracts } from "@/lib/sui-queries";
+import { fetchInvestors } from "@/lib/sui-queries";
 import type { Investor, Contract } from "@/types";
 import {
   ArrowLeft,
@@ -28,26 +28,15 @@ export default function InvestorDetailPage() {
   useEffect(() => {
     async function loadInvestor() {
       try {
-        const [investors, allContracts] = await Promise.all([
-          fetchInvestors(),
-          fetchContracts(),
-        ]);
-
-        const foundInvestor = investors.find((i) => i.id === params.id);
-        setInvestor(foundInvestor || null);
-
-        // Filter contracts for this investor
-        const investorContracts = allContracts.filter(
-          (contract) => contract.investorAddress === foundInvestor?.owner
-        );
-        setContracts(investorContracts);
+        const students = await fetchInvestors();
+        const foundStudent = students.find((s) => s.id === params.id);
+        setInvestor(foundStudent || null);
       } catch (error) {
-        console.error("Error loading investor:", error);
+        console.error("Error loading student:", error);
       } finally {
         setLoading(false);
       }
     }
-
     loadInvestor();
   }, [params.id]);
 

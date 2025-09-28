@@ -7,7 +7,7 @@ export interface CreateStudentProfileParams {
   name: string;
   surname: string;
   age: number;
-  cvHash: string;
+  cvUrl: string;
   profileImage: string;
   fundingRequested: number;
   equityPercentage: number;
@@ -29,6 +29,16 @@ export interface AcceptContractParams {
 
 export interface RejectContractParams {
   contractId: string;
+  registryId: string;
+}
+
+export interface ProposeContractParams {
+  studentAddress: string;
+  blobId: string;
+  fundingAmount: number;
+  releaseIntervalDays: number;
+  equityPercentage: number;
+  durationMonths: number;
   registryId: string;
 }
 
@@ -93,7 +103,7 @@ export function createStudentProfileTransaction(
       tx.pure.string(params.name),
       tx.pure.string(params.surname),
       tx.pure.u64(params.age),
-      tx.pure.string(params.cvHash),
+      tx.pure.string(params.cvUrl),
       tx.pure.string(params.profileImage),
       tx.pure.u64(params.fundingRequested),
       tx.pure.u64(params.equityPercentage),
@@ -147,6 +157,26 @@ export function rejectContractTransaction(params: RejectContractParams) {
     arguments: [
       tx.object(params.contractId), // contract object reference
       tx.object(params.registryId), // registry object reference
+    ],
+  });
+
+  return tx;
+}
+
+export function proposeContractTransaction(params: ProposeContractParams) {
+  const tx = new Transaction();
+
+  tx.moveCall({
+    target: `${MODULES.EDU_DEFI}::investor_propose_contract`,
+    arguments: [
+      tx.pure.address(params.studentAddress),
+      tx.pure.string(params.blobId), // Walrus blobId
+      tx.pure.u64(params.fundingAmount),
+      tx.pure.u64(params.releaseIntervalDays),
+      tx.pure.u64(params.equityPercentage),
+      tx.pure.u64(params.durationMonths),
+      tx.object(params.registryId),
+      tx.object("0x6"), // Clock object
     ],
   });
 

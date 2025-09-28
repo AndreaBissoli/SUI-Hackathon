@@ -24,7 +24,7 @@ interface StudentFormData {
   name: string;
   surname: string;
   age: number;
-  cvHash: string;
+  cvUrl: string;
   profileImage: string;
   fundingRequested: number;
   equityPercentage: number;
@@ -40,7 +40,7 @@ export function StudentRegistrationForm() {
     name: "",
     surname: "",
     age: 18,
-    cvHash: "",
+    cvUrl: "",
     profileImage: "",
     fundingRequested: 0,
     equityPercentage: 0,
@@ -78,7 +78,7 @@ export function StudentRegistrationForm() {
         name: "",
         surname: "",
         age: 18,
-        cvHash: "",
+        cvUrl: "",
         profileImage: "",
         fundingRequested: 0,
         equityPercentage: 0,
@@ -164,22 +164,17 @@ export function StudentRegistrationForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="cvHash">CV/Resume Hash (IPFS)</Label>
+            <Label htmlFor="cvUrl">CV URL</Label>
             <div className="flex gap-2">
               <Input
-                id="cvHash"
-                placeholder="QmHash..."
-                value={formData.cvHash}
-                onChange={(e) => handleInputChange("cvHash", e.target.value)}
+                id="cvUrl"
+                placeholder="https://example.com/cv.pdf"
+                value={formData.cvUrl}
+                onChange={(e) => handleInputChange("cvUrl", e.target.value)}
                 required
               />
-              <Button type="button" variant="outline" size="icon">
-                <Upload className="h-4 w-4" />
-              </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Upload your CV
-            </p>
+            <p className="text-xs text-muted-foreground">Upload your CV</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

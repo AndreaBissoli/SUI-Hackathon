@@ -17,6 +17,10 @@ import { Badge } from "@/components/ui/badge";
 import { fetchStudents } from "@/lib/sui-queries";
 import type { Student } from "@/types";
 import {
+  proposeContractTransaction,
+  executeTransaction,
+} from "@/lib/sui-transactions";
+import {
   ArrowLeft,
   DollarSign,
   TrendingUp,
@@ -26,18 +30,24 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/hooks/use-auth";
+import { sign } from "crypto";
+import { ca } from "date-fns/locale";
+import { profile } from "console";
 
 export default function StudentDetailPage() {
   const params = useParams();
   const [student, setStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
-  const { userProfile, isInvestor } = useAuth();
+  const { userProfile, isInvestor, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [isProposing, setIsProposing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const account = useCurrentAccount(); // <-- optional (owner for Walrus register)
-  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction(); // <-- updated
+  const {
+    mutateAsync: signAndExecuteTransactionAsync,
+    mutate: signAndExecute,
+  } = useSignAndExecuteTransaction(); // <-- updated
 
   useEffect(() => {
     async function loadStudent() {
@@ -90,7 +100,7 @@ export default function StudentDetailPage() {
         owner: account?.address, // optional but recommended
       });
 
-      const { digest } = await signAndExecute({
+      const { digest } = await signAndExecuteTransactionAsync({
         transaction: registerTx,
       });
 
@@ -99,7 +109,7 @@ export default function StudentDetailPage() {
       console.log("Walrus upload completed");
       // Step 4: certify (wallet signs)
       const certifyTx = await flow.certify();
-      await signAndExecute({
+      await signAndExecuteTransactionAsync({
         transaction: certifyTx,
       });
       console.log("Walrus certify completed");
@@ -118,44 +128,41 @@ export default function StudentDetailPage() {
 
       console.log("Walrus file available at blobId:", blobId);
       // --- SUI: call your Move entry with blobId ---
-      const tx = new Transaction();
-      tx.moveCall({
-        target: `${PACKAGE_ID}::edu_defi::investor_propose_contract`,
-        arguments: [
-          tx.pure.address(student.owner),
-          tx.pure.string(blobId), // <-- pass Walrus blobId
-          tx.pure.u64(student.fundingRequested),
-          tx.pure.u64(30), // release_interval_days
-          tx.pure.u64(student.equityPercentage),
-          tx.pure.u64(student.durationMonths),
-          tx.object(REGISTRY_ID),
-          tx.object("0x6"), // Clock
-        ],
-      });
+      try {
+        const tx = proposeContractTransaction({
+          studentAddress: student.owner,
+          blobId: blobId,
+          fundingAmount: student.fundingRequested,
+          releaseIntervalDays: 30,
+          equityPercentage: student.equityPercentage,
+          durationMonths: student.durationMonths,
+          registryId: REGISTRY_ID,
+        });
 
-      console.log("Submitting proposal transaction:", tx);
+        const result = await executeTransaction(tx, signAndExecute);
 
-      const exec = await signAndExecute({
-        transaction: tx,
-      });
-
-      toast({
-        title: "Proposal Successful",
-        description: `Transaction Digest: ${exec.digest}`,
-      });
-    } catch (error: any) {
-      console.error("Proposal failed:", error);
-      toast({
-        title: "Error",
-        description:
-          error?.message ?? "An unexpected error occurred during the proposal.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProposing(false);
-      // allow re-uploading the same file if needed
-      if (fileInputRef.current) fileInputRef.current.value = "";
+        toast({
+          title: "Proposal Successful",
+          description: `Transaction Digest: ${result.digest}`,
+        });
+      } catch (error: any) {
+        console.error("Proposal failed:", error);
+        toast({
+          title: "Error",
+          description:
+            error?.message ??
+            "An unexpected error occurred during the proposal.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsProposing(false);
+        // allow re-uploading the same file if needed
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    } catch (error) {
+      console.error("Walrus upload failed:", error);
     }
+    refreshProfile();
   };
 
   const handleProposeInvestment = () => {
@@ -251,23 +258,23 @@ export default function StudentDetailPage() {
                   {isInvestor && (
                     <div className="flex gap-4">
                       <Button
-                      onClick={handleProposeInvestment}
-                      size="lg"
-                      disabled={isProposing}
-                    >
+                        onClick={handleProposeInvestment}
+                        size="lg"
+                        disabled={isProposing}
+                      >
                         {isProposing ? "Proposing..." : "Propose Investment"}
                       </Button>
                       <Button size="lg" variant="outline">
                         Contact Student
                       </Button>
                       <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileSelect}
-                      style={{ display: "none" }}
-                      accept=".pdf"
-                    />
-                  </div>
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileSelect}
+                        style={{ display: "none" }}
+                        accept=".pdf"
+                      />
+                    </div>
                   )}
                 </div>
               </div>
@@ -356,12 +363,16 @@ export default function StudentDetailPage() {
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <div className="font-medium">CV/Resume</div>
-                        <div className="text-xs text-muted-foreground">
-                          {student.cvHash.slice(0, 20)}...
-                        </div>
+                        <div className="text-xs text-muted-foreground"></div>
                       </div>
                     </div>
-                    <Button size="sm" variant="outline">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        window.open(student.cvUrl, "_blank");
+                      }}
+                    >
                       View
                     </Button>
                   </div>

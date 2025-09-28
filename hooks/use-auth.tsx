@@ -105,7 +105,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             name: profile.data.name,
             surname: profile.data.surname,
             age: profile.data.age,
-            cvHash: profile.data.cvHash,
+            cvUrl: profile.data.cvUrl,
             profileImage: profile.data.profileImage,
             fundingRequested: profile.data.fundingRequested,
             equityPercentage: profile.data.equityPercentage,
