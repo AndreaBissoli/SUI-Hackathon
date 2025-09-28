@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "EduDeFi - Decentralized Education Funding",
+  title: "Bright Futures - Decentralized Education Funding",
   description:
     "Connect students with investors through blockchain-powered education funding",
   generator: "v0.app",

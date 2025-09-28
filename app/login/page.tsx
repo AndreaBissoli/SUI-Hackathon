@@ -28,7 +28,7 @@ export default function LoginPage() {
             <CardHeader className="text-center">
               <CardTitle className="text-2xl">Connect Your Wallet</CardTitle>
               <p className="text-muted-foreground">
-                Access your EduDeFi profile by connecting your Sui wallet
+                Access your Bright Futures profile by connecting your Sui wallet
               </p>
             </CardHeader>
 

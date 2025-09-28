@@ -32,7 +32,7 @@ export function Navigation() {
               className="flex items-center gap-2 font-bold text-xl"
             >
               <GraduationCap className="h-6 w-6 text-accent" />
-              EduDeFi
+              Bright Futures
             </Link>
 
             <div className="hidden md:flex items-center gap-6">
