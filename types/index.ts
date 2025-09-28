@@ -26,7 +26,7 @@ export interface Contract {
   id: string;
   studentAddress: string;
   investorAddress: string;
-  pdfHash: string;
+  walrus_id: string;
   fundingAmount: number;
   releaseIntervalDays: number;
   equityPercentage: number;

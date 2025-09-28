@@ -26,12 +26,13 @@ import {
   rejectContractTransaction,
 } from "@/lib/sui-transactions";
 import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
-import { REGISTRY_ID } from "@/lib/sui-client";
+import { REGISTRY_ID, walrusClient } from "@/lib/sui-client";
 
 const ContractCard = ({ contract }: { contract: Contract }) => {
   const { account, userProfile, isInvestor, isStudent, refreshProfile } =
     useAuth();
-  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+  console.log(contract)
+    const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
 
   const otherPartyAddress = isStudent
     ? contract.investorAddress
@@ -82,9 +83,13 @@ const ContractCard = ({ contract }: { contract: Contract }) => {
     }
     refreshProfile();
   };
-
   const handleViewContract = () => {
-    window.open(`https://walrus.sui.io/file/${contract.pdfHash}`, "_blank");
+    window.open(`https://aggregator.walrus-testnet.walrus.space/v1/blobs/${contract.walrus_id}`, "_blank");
+    /*walrusClient.readBlob({ blobId: contract.walrus_id }).then((blob) => {
+      const file = new Blob([new Uint8Array(blob)], { type: "application/pdf" });
+      const fileUrl = URL.createObjectURL(file);
+      
+    });*/
   };
 
   return (

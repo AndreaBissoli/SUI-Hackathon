@@ -376,7 +376,7 @@ function parseContract(obj: SuiObjectResponse): Contract | null {
     id: data.objectId,
     studentAddress: String(f.student_address ?? ""),
     investorAddress: String(f.investor_address ?? ""),
-    pdfHash: String(f.pdf_hash ?? ""),
+    walrus_id: String(f.walrus_id ?? ""),
     fundingAmount: toNum(f.funding_amount, "funding_amount"),
     releaseIntervalDays: toNum(
       f.release_interval_days,
