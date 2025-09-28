@@ -1,7 +1,26 @@
 module edu_defi::investor {
     use sui::clock::{Self, Clock};
+    use sui::event;
     use std::string::String;
     use edu_defi::errors;
+
+    // ============ Events ============
+    
+    public struct InvestorProfileCreated has copy, drop {
+        investor_id: address,
+        owner: address,
+        name: String,
+        surname: String,
+        age: u64,
+    }
+    
+    public struct InvestorProfileUpdated has copy, drop {
+        investor_id: address,
+        owner: address,
+        name: String,
+        surname: String,
+        age: u64,
+    }
 
     /// Investor profile structure
     public struct Investor has key, store {
@@ -23,7 +42,7 @@ module edu_defi::investor {
         clock: &Clock,
         ctx: &mut TxContext
     ): Investor {
-        Investor {
+        let investor = Investor {
             id: object::new(ctx),
             owner: tx_context::sender(ctx),
             name,
@@ -31,7 +50,18 @@ module edu_defi::investor {
             age,
             profile_image,
             created_at: clock::timestamp_ms(clock),
-        }
+        };
+        
+        // Emit event for investor profile creation
+        event::emit(InvestorProfileCreated {
+            investor_id: object::uid_to_address(&investor.id),
+            owner: tx_context::sender(ctx),
+            name,
+            surname,
+            age,
+        });
+        
+        investor
     }
 
     /// Get investor ID as address
@@ -54,6 +84,15 @@ module edu_defi::investor {
         investor.surname = surname;
         investor.age = age;
         investor.profile_image = profile_image;
+        
+        // Emit event for investor profile update
+        event::emit(InvestorProfileUpdated {
+            investor_id: object::uid_to_address(&investor.id),
+            owner: tx_context::sender(ctx),
+            name,
+            surname,
+            age,
+        });
     }
 
     /// Get investor information

@@ -3,9 +3,74 @@ module edu_defi::contract {
     use sui::sui::SUI;
     use sui::balance::{Self, Balance};
     use sui::clock::{Self, Clock};
+    use sui::event;
     use std::string::String;
     use sui::vec_map::{Self, VecMap};
     use edu_defi::errors;
+
+    // ============ Events ============
+    
+    public struct ContractCreated has copy, drop {
+        contract_id: address,
+        student_address: address,
+        investor_address: address,
+        funding_amount: u64,
+        equity_percentage: u64,
+        duration_months: u64,
+        release_interval_days: u64,
+    }
+    
+    public struct ContractAccepted has copy, drop {
+        contract_id: address,
+        student_address: address,
+        investor_address: address,
+    }
+    
+    public struct ContractFunded has copy, drop {
+        contract_id: address,
+        student_address: address,
+        investor_address: address,
+        funding_amount: u64,
+        token_supply: u64,
+    }
+    
+    public struct FundsReleased has copy, drop {
+        contract_id: address,
+        student_address: address,
+        amount_released: u64,
+        total_released: u64,
+        next_release_time: u64,
+    }
+    
+    public struct DividendPaid has copy, drop {
+        contract_id: ID,
+        reward_pool_id: ID,
+        student_address: address,
+        payment_id: u64,
+        total_amount: u64,
+    }
+    
+    public struct DividendClaimed has copy, drop {
+        contract_id: ID,
+        reward_pool_id: ID,
+        investor_address: address,
+        payment_id: u64,
+        amount_claimed: u64,
+    }
+    
+    public struct TokensTransferred has copy, drop {
+        reward_pool_id: ID,
+        from_address: address,
+        to_address: address,
+        token_amount: u64,
+    }
+    
+    public struct RewardPoolCreated has copy, drop {
+        reward_pool_id: ID,
+        contract_id: ID,
+        student_address: address,
+        total_token_supply: u64,
+    }
 
     /// Dividend payment record
     public struct DividendPayment has store {
@@ -83,6 +148,18 @@ module edu_defi::contract {
         };
         
         let contract_address = object::uid_to_address(&contract.id);
+        
+        // Emit event for contract creation
+        event::emit(ContractCreated {
+            contract_id: contract_address,
+            student_address,
+            investor_address: tx_context::sender(ctx),
+            funding_amount,
+            equity_percentage,
+            duration_months,
+            release_interval_days,
+        });
+        
         transfer::share_object(contract);
         contract_address
     }
@@ -99,6 +176,13 @@ module edu_defi::contract {
     ) {
         assert!(contract.student_address == tx_context::sender(ctx), errors::unauthorized());
         contract.is_active = true;
+        
+        // Emit event for contract acceptance
+        event::emit(ContractAccepted {
+            contract_id: object::uid_to_address(&contract.id),
+            student_address: contract.student_address,
+            investor_address: contract.investor_address,
+        });
     }
 
     /// Student rejects a proposed contract
@@ -157,6 +241,15 @@ module edu_defi::contract {
         let release_balance = balance::split(&mut contract.balance, amount_to_release);
         let release_coin = coin::from_balance(release_balance, ctx);
         transfer::public_transfer(release_coin, contract.student_address);
+        
+        // Emit event for funds release
+        event::emit(FundsReleased {
+            contract_id: object::uid_to_address(&contract.id),
+            student_address: contract.student_address,
+            amount_released: amount_to_release,
+            total_released: contract.funds_released,
+            next_release_time: contract.next_release_time,
+        });
     }
 
     
@@ -166,7 +259,6 @@ module edu_defi::contract {
     public fun fund_contract_with_tokens(
         contract: &mut Contract,
         payment: Coin<SUI>,
-        _clock: &Clock,
         ctx: &mut TxContext
     ) {
         assert!(contract.investor_address == tx_context::sender(ctx), errors::unauthorized());
@@ -204,6 +296,22 @@ module edu_defi::contract {
         contract.reward_pool_id = option::some(pool_id);
         contract.has_tokens_issued = true;
         
+        // Emit events for contract funding and reward pool creation
+        event::emit(ContractFunded {
+            contract_id: object::uid_to_address(&contract.id),
+            student_address: contract.student_address,
+            investor_address: tx_context::sender(ctx),
+            funding_amount: payment_amount,
+            token_supply: token_cap,
+        });
+        
+        event::emit(RewardPoolCreated {
+            reward_pool_id: pool_id,
+            contract_id: object::id(contract),
+            student_address: contract.student_address,
+            total_token_supply: token_cap,
+        });
+        
         transfer::share_object(reward_pool);
     }
 
@@ -236,6 +344,15 @@ module edu_defi::contract {
         // Aggiungi fondi alla pool per i dividendi
         let payment_balance = coin::into_balance(payment);
         balance::join(&mut reward_pool.total_balance, payment_balance);
+        
+        // Emit event for dividend payment
+        event::emit(DividendPaid {
+            contract_id: object::id(contract),
+            reward_pool_id: object::id(reward_pool),
+            student_address: contract.student_address,
+            payment_id: reward_pool.next_payment_id - 1,
+            total_amount: payment_amount,
+        });
     }
 
     /// Claim dividends from specific payment
@@ -268,6 +385,15 @@ module edu_defi::contract {
             ctx
         );
         
+        // Emit event for dividend claim
+        event::emit(DividendClaimed {
+            contract_id: reward_pool.contract_id,
+            reward_pool_id: object::id(reward_pool),
+            investor_address,
+            payment_id,
+            amount_claimed: investor_share,
+        });
+        
         dividend_coin
     }
 
@@ -298,10 +424,21 @@ module edu_defi::contract {
         
         assert!(total_claimable > 0, errors::insufficient_funds());
         
-        coin::from_balance(
+        let dividend_coin = coin::from_balance(
             balance::split(&mut reward_pool.total_balance, total_claimable),
             ctx
-        )
+        );
+        
+        // Emit event for claiming all dividends
+        event::emit(DividendClaimed {
+            contract_id: reward_pool.contract_id,
+            reward_pool_id: object::id(reward_pool),
+            investor_address,
+            payment_id: 0, // Use 0 to indicate "all dividends"
+            amount_claimed: total_claimable,
+        });
+        
+        dividend_coin
     }
     
     /// function to transfer tokens between an investor who has some and another investor.
@@ -320,6 +457,14 @@ module edu_defi::contract {
         assert!(from_address != to_address, errors::invalid_recipient());
         // Update token distribution
         update_token_distribution(reward_pool, from_address, to_address, token_amount, ctx);
+        
+        // Emit event for token transfer
+        event::emit(TokensTransferred {
+            reward_pool_id: object::id(reward_pool),
+            from_address,
+            to_address,
+            token_amount,
+        });
     }
 
 

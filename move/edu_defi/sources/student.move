@@ -1,7 +1,30 @@
 module edu_defi::student {
     use sui::clock::{Self, Clock};
+    use sui::event;
     use std::string::String;
     use edu_defi::errors;
+
+    // ============ Events ============
+    
+    public struct StudentProfileCreated has copy, drop {
+        student_id: address,
+        owner: address,
+        name: String,
+        surname: String,
+        funding_requested: u64,
+        equity_percentage: u64,
+        duration_months: u64,
+    }
+    
+    public struct StudentProfileUpdated has copy, drop {
+        student_id: address,
+        owner: address,
+        name: String,
+        surname: String,
+        funding_requested: u64,
+        equity_percentage: u64,
+        duration_months: u64,
+    }
 
     /// Student profile structure
     public struct Student has key, store {
@@ -35,7 +58,7 @@ module edu_defi::student {
         assert!(funding_requested > 0, errors::invalid_amount());
         assert!(duration_months > 0, errors::invalid_duration());
 
-        Student {
+        let student = Student {
             id: object::new(ctx),
             owner: tx_context::sender(ctx),
             name,
@@ -47,7 +70,20 @@ module edu_defi::student {
             equity_percentage,
             duration_months,
             created_at: clock::timestamp_ms(clock),
-        }
+        };
+        
+        // Emit event for student profile creation
+        event::emit(StudentProfileCreated {
+            student_id: object::uid_to_address(&student.id),
+            owner: tx_context::sender(ctx),
+            name,
+            surname,
+            funding_requested,
+            equity_percentage,
+            duration_months,
+        });
+        
+        student
     }
 
     /// Get student ID as address
@@ -81,6 +117,17 @@ module edu_defi::student {
         student.funding_requested = funding_requested;
         student.equity_percentage = equity_percentage;
         student.duration_months = duration_months;
+        
+        // Emit event for student profile update
+        event::emit(StudentProfileUpdated {
+            student_id: object::uid_to_address(&student.id),
+            owner: tx_context::sender(ctx),
+            name,
+            surname,
+            funding_requested,
+            equity_percentage,
+            duration_months,
+        });
     }
 
     /// Get student information
