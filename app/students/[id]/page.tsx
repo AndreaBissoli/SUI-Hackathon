@@ -7,8 +7,7 @@ import {
   useCurrentAccount,
 } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
-import { walrusClient, PACKAGE_ID, REGISTRY_ID } from "@/lib/sui-client";
-import { WalrusFile } from "@mysten/walrus"; // <-- add
+import { PACKAGE_ID, REGISTRY_ID } from "@/lib/sui-client";
 import { useToast } from "@/hooks/use-toast";
 import { Navigation } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
@@ -79,49 +78,38 @@ export default function StudentDetailPage() {
     });
 
     try {
-      // --- WALRUS: encode -> register -> upload -> certify ---
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      const walrusFile = WalrusFile.from({
-        contents: bytes,
-        identifier: file.name,
-        tags: {
-          "content-type": "application/pdf",
-          "content-disposition": `inline; filename="${file.name}"`,
-        },
-      });
+      // --- WALRUS: upload ---
+      // We have been forced to abandon the SDK way in favour of the proxy because walrus was having issues: files would upload but be downloaded corrupt
+      const publisherUrl = "https://publisher.walrus-testnet.walrus.space";
+      const numEpochs = 1; // Default from example
+      const response = await fetch(
+        `${publisherUrl}/v1/blobs?epochs=${numEpochs}`,
+        {
+          method: "PUT",
+          body: file,
+        }
+      );
 
-      const flow = walrusClient.writeFilesFlow({ files: [walrusFile] });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Something went wrong when storing the blob! ${errorText}`);
+      }
 
-      // Step 1: local encode (no wallet)
-      await flow.encode();
+      const storageInfo = await response.json();
+      console.log(storageInfo);
 
-      // Step 2: register (wallet signs)
-      const registerTx = await flow.register({
-        epochs: 3,
-        deletable: true,
-        owner: account?.address, // optional but recommended
-      });
+      let blobId;
+      if ("alreadyCertified" in storageInfo) {
+        blobId = storageInfo.alreadyCertified.blobId;
+      } else if ("newlyCreated" in storageInfo) {
+        blobId = storageInfo.newlyCreated.blobObject.blobId;
+      } else {
+        throw new Error("Unhandled successful response from Walrus!");
+      }
 
-      const { digest } = await signAndExecuteTransactionAsync({
-        transaction: registerTx,
-      });
-
-      // Step 3: upload slivers (HTTP)
-      await flow.upload({ digest });
-      console.log("Walrus upload completed");
-      // Step 4: certify (wallet signs)
-      const certifyTx = await flow.certify();
-      await signAndExecuteTransactionAsync({
-        transaction: certifyTx,
-      });
-      console.log("Walrus certify completed");
-      // Step 5: read resulting blobId
-      const files = await flow.listFiles();
-      const blobId = files[0]?.blobId;
-      if (!blobId)
-        throw new Error(
-          "Walrus certification completed but blobId is missing."
-        );
+      if (!blobId) {
+        throw new Error("Walrus upload completed but blobId is missing.");
+      }
 
       toast({
         title: "Upload Successful",
