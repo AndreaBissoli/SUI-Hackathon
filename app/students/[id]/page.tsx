@@ -54,6 +54,7 @@ export default function StudentDetailPage() {
       try {
         const students = await fetchStudents();
         const foundStudent = students.find((s) => s.id === params.id);
+        console.log(foundStudent);
         setStudent(foundStudent || null);
       } catch (error) {
         console.error("Error loading student:", error);
@@ -61,6 +62,7 @@ export default function StudentDetailPage() {
         setLoading(false);
       }
     }
+
     loadStudent();
   }, [params.id]);
 

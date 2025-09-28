@@ -197,58 +197,6 @@ export default function InvestorDetailPage() {
             </Card>
           </div>
 
-          {/* Investment Portfolio */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-accent" />
-                Investment Portfolio
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {contracts.length > 0 ? (
-                <div className="space-y-4">
-                  {contracts.map((contract) => (
-                    <div
-                      key={contract.id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium">
-                          Contract #{contract.id.slice(0, 8)}...
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Student: {contract.studentAddress.slice(0, 6)}...
-                          {contract.studentAddress.slice(-4)}
-                        </div>
-                      </div>
-
-                      <div className="text-right space-y-1">
-                        <div className="font-medium">
-                          ${contract.fundingAmount.toLocaleString()}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {contract.equityPercentage}% equity
-                        </div>
-                        <Badge
-                          variant={contract.isActive ? "default" : "secondary"}
-                        >
-                          {contract.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">
-                    No investment contracts yet
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           {/* Profile Information */}
           <Card>
             <CardHeader>

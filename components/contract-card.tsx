@@ -23,6 +23,8 @@ import {
   executeTransaction,
   RejectContractParams,
   rejectContractTransaction,
+  fundContractTransaction,
+  FundContractParams,
 } from "@/lib/sui-transactions";
 import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { REGISTRY_ID, walrusClient } from "@/lib/sui-client";
@@ -104,16 +106,34 @@ const ContractCard = ({ contract }: { contract: Contract }) => {
     }
     refreshProfile();
   };
-  const handleViewContract = () => {
-    window.open(
-      `https://aggregator.walrus-testnet.walrus.space/v1/blobs/${contract.walrus_id}`,
-      "_blank"
-    );
-    /*walrusClient.readBlob({ blobId: contract.walrus_id }).then((blob) => {
-      const file = new Blob([new Uint8Array(blob)], { type: "application/pdf" });
-      const fileUrl = URL.createObjectURL(file);
-      
-    });*/
+
+  const handleFundContract = async () => {
+    if (!account) return;
+    if (!isInvestor) return;
+
+    try {
+      const tx = fundContractTransaction({
+        contractId: contract.id,
+        amount: contract.fundingAmount,
+      });
+
+      await executeTransaction(tx, signAndExecuteTransaction);
+    } catch (error) {
+      console.error("Error funding contract:", error);
+    }
+    refreshProfile();
+  };
+
+  const handleOpenContract = async () => {
+    const res = await fetch(
+      `https://aggregator.walrus-testnet.walrus.space/v1/blobs/${contract.walrus_id}`
+    ); // metti l’URL del gateway che usi
+    const mime = res.headers.get("content-type") || "application/octet-stream";
+    const ab = await res.arrayBuffer();
+    const blob = new Blob([ab], { type: mime });
+
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
   };
 
   return (
@@ -190,13 +210,40 @@ const ContractCard = ({ contract }: { contract: Contract }) => {
               {otherPartyAddress.slice(0, 8)}...{otherPartyAddress.slice(-6)}
             </p>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            asChild
+            onClick={handleOpenContract}
+          >
+            <div>
+              <User className="h-4 w-4 mr-2" />
+              View Contract
+              <ExternalLink className="h-4 w-4 ml-2" />
+            </div>
+          </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href={`/${otherPartyType}s/${otherPartyProfile?.objectId}`}>
-              <User className="h-4 w-4 mr-2" />
-              View Profile
+              <User className="h-4 w-4 mr-2 block" />
+              View<span className="capitalize">{otherPartyType}</span>
               <ExternalLink className="h-4 w-4 ml-2" />
             </Link>
           </Button>
+          {isInvestor && contract.isActive && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="cursor-pointer"
+              asChild
+              onClick={handleFundContract}
+            >
+              <div>
+                <User className="h-4 w-4 mr-2" />
+                Fund Contract
+                <ExternalLink className="h-4 w-4 ml-2" />
+              </div>
+            </Button>
+          )}
         </div>
 
         {/* Azioni per contratti inattivi */}
@@ -233,7 +280,13 @@ const ContractCard = ({ contract }: { contract: Contract }) => {
 
         {/* Informazioni  per contratti attivi */}
         {contract.isActive && (
-          <div className="grid grid-cols-2 gap-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="grid grid-cols-3 gap-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Funds in Contract</p>
+              <p className="text-sm font-semibold">
+                {formatSUI(contract.balance)} SUI
+              </p>
+            </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Funds Released</p>
               <p className="text-sm font-semibold">

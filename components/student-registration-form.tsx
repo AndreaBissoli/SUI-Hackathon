@@ -183,8 +183,8 @@ export function StudentRegistrationForm() {
               <Input
                 id="fundingRequested"
                 type="number"
-                min="1000"
-                step="1000"
+                min="1"
+                step="1"
                 value={formData.fundingRequested}
                 onChange={(e) =>
                   handleInputChange(
