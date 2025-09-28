@@ -28,7 +28,7 @@ module edu_defi::student_tests {
             string::utf8(b"Mario"),
             string::utf8(b"Rossi"),
             25,
-            string::utf8(b"cv_hash_123"),
+            string::utf8(b"cv_url_123"),
             string::utf8(b"profile_img_url"),
             100000,
             20,
@@ -38,13 +38,13 @@ module edu_defi::student_tests {
         );
 
         // Test student info
-        let (name, surname, age, cv_hash, funding_requested, equity_percentage, duration_months) = 
+        let (name, surname, age, cv_url, funding_requested, equity_percentage, duration_months) = 
             student::get_info(&student);
         
         assert!(name == string::utf8(b"Mario"), 0);
         assert!(surname == string::utf8(b"Rossi"), 1);
         assert!(age == 25, 2);
-        assert!(cv_hash == string::utf8(b"cv_hash_123"), 3);
+        assert!(cv_url == string::utf8(b"cv_url_123"), 3);
         assert!(funding_requested == 100000, 4);
         assert!(equity_percentage == 20, 5);
         assert!(duration_months == 24, 6);
@@ -68,7 +68,7 @@ module edu_defi::student_tests {
             string::utf8(b"Mario"),
             string::utf8(b"Rossi"),
             25,
-            string::utf8(b"cv_hash_123"),
+            string::utf8(b"cv_url_123"),
             string::utf8(b"profile_img_url"),
             100000,
             20,
@@ -83,7 +83,7 @@ module edu_defi::student_tests {
             string::utf8(b"Luigi"),
             string::utf8(b"Bianchi"),
             30,
-            string::utf8(b"new_cv_hash"),
+            string::utf8(b"new_cv_url"),
             string::utf8(b"new_profile_img"),
             150000,
             25,
@@ -92,13 +92,13 @@ module edu_defi::student_tests {
         );
 
         // Verify updates
-        let (name, surname, age, cv_hash, funding_requested, equity_percentage, duration_months) = 
+        let (name, surname, age, cv_url, funding_requested, equity_percentage, duration_months) = 
             student::get_info(&student);
         
         assert!(name == string::utf8(b"Luigi"), 0);
         assert!(surname == string::utf8(b"Bianchi"), 1);
         assert!(age == 30, 2);
-        assert!(cv_hash == string::utf8(b"new_cv_hash"), 3);
+        assert!(cv_url == string::utf8(b"new_cv_url"), 3);
         assert!(funding_requested == 150000, 4);
         assert!(equity_percentage == 25, 5);
         assert!(duration_months == 36, 6);
@@ -121,7 +121,7 @@ module edu_defi::student_tests {
             string::utf8(b"Mario"),
             string::utf8(b"Rossi"),
             25,
-            string::utf8(b"cv_hash_123"),
+            string::utf8(b"cv_url_123"),
             string::utf8(b"profile_img_url"),
             100000,
             150, // Invalid: > 100
@@ -148,7 +148,7 @@ module edu_defi::student_tests {
             string::utf8(b"Mario"),
             string::utf8(b"Rossi"),
             25,
-            string::utf8(b"cv_hash_123"),
+            string::utf8(b"cv_url_123"),
             string::utf8(b"profile_img_url"),
             0, // Invalid: must be > 0
             20,
@@ -175,7 +175,7 @@ module edu_defi::student_tests {
             string::utf8(b"Mario"),
             string::utf8(b"Rossi"),
             25,
-            string::utf8(b"cv_hash_123"),
+            string::utf8(b"cv_url_123"),
             string::utf8(b"profile_img_url"),
             100000,
             20,
@@ -201,7 +201,7 @@ module edu_defi::student_tests {
             string::utf8(b"Mario"),
             string::utf8(b"Rossi"),
             25,
-            string::utf8(b"cv_hash_123"),
+            string::utf8(b"cv_url_123"),
             string::utf8(b"profile_img_url"),
             100000,
             20,
@@ -218,7 +218,7 @@ module edu_defi::student_tests {
             string::utf8(b"Luigi"),
             string::utf8(b"Bianchi"),
             30,
-            string::utf8(b"new_cv_hash"),
+            string::utf8(b"new_cv_url"),
             string::utf8(b"new_profile_img"),
             150000,
             25,

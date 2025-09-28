@@ -33,7 +33,7 @@ module edu_defi::student {
         name: String,
         surname: String,
         age: u64,
-        cv_hash: String,
+        cv_url: String,
         profile_image: String,
         funding_requested: u64,
         equity_percentage: u64,
@@ -46,7 +46,7 @@ module edu_defi::student {
         name: String,
         surname: String,
         age: u64,
-        cv_hash: String,
+        cv_url: String,
         profile_image: String,
         funding_requested: u64,
         equity_percentage: u64,
@@ -64,7 +64,7 @@ module edu_defi::student {
             name,
             surname,
             age,
-            cv_hash,
+            cv_url,
             profile_image,
             funding_requested,
             equity_percentage,
@@ -97,7 +97,7 @@ module edu_defi::student {
         name: String,
         surname: String,
         age: u64,
-        cv_hash: String,
+        cv_url: String,
         profile_image: String,
         funding_requested: u64,
         equity_percentage: u64,
@@ -112,7 +112,7 @@ module edu_defi::student {
         student.name = name;
         student.surname = surname;
         student.age = age;
-        student.cv_hash = cv_hash;
+        student.cv_url = cv_url;
         student.profile_image = profile_image;
         student.funding_requested = funding_requested;
         student.equity_percentage = equity_percentage;
@@ -132,7 +132,7 @@ module edu_defi::student {
 
     /// Get student information
     public fun get_info(student: &Student): (String, String, u64, String, u64, u64, u64) {
-        (student.name, student.surname, student.age, student.cv_hash, 
+        (student.name, student.surname, student.age, student.cv_url, 
          student.funding_requested, student.equity_percentage, student.duration_months)
     }
 }

@@ -6,7 +6,7 @@ import { Navigation } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { fetchInvestors, fetchContracts } from "@/lib/sui-queries";
+import { fetchInvestors } from "@/lib/sui-queries";
 import type { Investor, Contract } from "@/types";
 import {
   ArrowLeft,
@@ -28,26 +28,15 @@ export default function InvestorDetailPage() {
   useEffect(() => {
     async function loadInvestor() {
       try {
-        const [investors, allContracts] = await Promise.all([
-          fetchInvestors(),
-          fetchContracts(),
-        ]);
-
-        const foundInvestor = investors.find((i) => i.id === params.id);
-        setInvestor(foundInvestor || null);
-
-        // Filter contracts for this investor
-        const investorContracts = allContracts.filter(
-          (contract) => contract.investorAddress === foundInvestor?.owner
-        );
-        setContracts(investorContracts);
+        const students = await fetchInvestors();
+        const foundStudent = students.find((s) => s.id === params.id);
+        setInvestor(foundStudent || null);
       } catch (error) {
-        console.error("Error loading investor:", error);
+        console.error("Error loading student:", error);
       } finally {
         setLoading(false);
       }
     }
-
     loadInvestor();
   }, [params.id]);
 
@@ -207,58 +196,6 @@ export default function InvestorDetailPage() {
               </CardContent>
             </Card>
           </div>
-
-          {/* Investment Portfolio */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-accent" />
-                Investment Portfolio
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {contracts.length > 0 ? (
-                <div className="space-y-4">
-                  {contracts.map((contract) => (
-                    <div
-                      key={contract.id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium">
-                          Contract #{contract.id.slice(0, 8)}...
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Student: {contract.studentAddress.slice(0, 6)}...
-                          {contract.studentAddress.slice(-4)}
-                        </div>
-                      </div>
-
-                      <div className="text-right space-y-1">
-                        <div className="font-medium">
-                          ${contract.fundingAmount.toLocaleString()}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {contract.equityPercentage}% equity
-                        </div>
-                        <Badge
-                          variant={contract.isActive ? "default" : "secondary"}
-                        >
-                          {contract.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">
-                    No investment contracts yet
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
           {/* Profile Information */}
           <Card>
