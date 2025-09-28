@@ -1,7 +1,6 @@
 import type { Student, Investor, Contract } from "@/types";
 import { suiClient, REGISTRY_ID, STRUCTS } from "./sui-client";
-import type { SuiObjectResponse } from "@mysten/sui.js/client";
-import { add } from "date-fns";
+import type { SuiObjectResponse } from "@mysten/sui/client";
 
 function toNum(x: unknown, label: string): number {
   const n = typeof x === "string" ? Number(x) : (x as number);
@@ -377,7 +376,7 @@ function parseContract(obj: SuiObjectResponse): Contract | null {
     id: data.objectId,
     studentAddress: String(f.student_address ?? ""),
     investorAddress: String(f.investor_address ?? ""),
-    pdfHash: String(f.pdf_hash ?? ""),
+    walrus_id: String(f.walrus_id ?? ""),
     fundingAmount: toNum(f.funding_amount, "funding_amount"),
     releaseIntervalDays: toNum(
       f.release_interval_days,

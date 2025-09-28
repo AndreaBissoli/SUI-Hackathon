@@ -1,7 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
+import {
+  useSignAndExecuteTransaction,
+  useCurrentAccount,
+} from "@mysten/dapp-kit";
+import { Transaction } from "@mysten/sui/transactions";
+import { walrusClient, PACKAGE_ID, REGISTRY_ID } from "@/lib/sui-client";
+import { WalrusFile } from "@mysten/walrus"; // <-- add
+import { useToast } from "@/hooks/use-toast";
 import { Navigation } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +32,12 @@ export default function StudentDetailPage() {
   const [student, setStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
   const { userProfile, isInvestor } = useAuth();
+  const { toast } = useToast();
+  const [isProposing, setIsProposing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const account = useCurrentAccount(); // <-- optional (owner for Walrus register)
+  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction(); // <-- updated
 
   useEffect(() => {
     async function loadStudent() {
@@ -37,11 +51,116 @@ export default function StudentDetailPage() {
         setLoading(false);
       }
     }
-
     loadStudent();
   }, [params.id]);
 
-  const handleProposeInvestment = () => {};
+  const handleFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !student || !account) return;
+
+    setIsProposing(true);
+    toast({
+      title: "Uploading Contract...",
+      description: "Please wait while we upload the investment contract.",
+    });
+
+    try {
+      // --- WALRUS: encode -> register -> upload -> certify ---
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const walrusFile = WalrusFile.from({
+        contents: bytes,
+        identifier: file.name,
+        tags: {
+          "content-type": "application/pdf",
+          "content-disposition": `inline; filename="${file.name}"`,
+        },
+      });
+
+      const flow = walrusClient.writeFilesFlow({ files: [walrusFile] });
+
+      // Step 1: local encode (no wallet)
+      await flow.encode();
+
+      // Step 2: register (wallet signs)
+      const registerTx = await flow.register({
+        epochs: 3,
+        deletable: true,
+        owner: account?.address, // optional but recommended
+      });
+
+      const { digest } = await signAndExecute({
+        transaction: registerTx,
+      });
+
+      // Step 3: upload slivers (HTTP)
+      await flow.upload({ digest });
+      console.log("Walrus upload completed");
+      // Step 4: certify (wallet signs)
+      const certifyTx = await flow.certify();
+      await signAndExecute({
+        transaction: certifyTx,
+      });
+      console.log("Walrus certify completed");
+      // Step 5: read resulting blobId
+      const files = await flow.listFiles();
+      const blobId = files[0]?.blobId;
+      if (!blobId)
+        throw new Error(
+          "Walrus certification completed but blobId is missing."
+        );
+
+      toast({
+        title: "Upload Successful",
+        description: `Blob ID: ${blobId.slice(0, 14)}…`,
+      });
+
+      console.log("Walrus file available at blobId:", blobId);
+      // --- SUI: call your Move entry with blobId ---
+      const tx = new Transaction();
+      tx.moveCall({
+        target: `${PACKAGE_ID}::edu_defi::investor_propose_contract`,
+        arguments: [
+          tx.pure.address(student.owner),
+          tx.pure.string(blobId), // <-- pass Walrus blobId
+          tx.pure.u64(student.fundingRequested),
+          tx.pure.u64(30), // release_interval_days
+          tx.pure.u64(student.equityPercentage),
+          tx.pure.u64(student.durationMonths),
+          tx.object(REGISTRY_ID),
+          tx.object("0x6"), // Clock
+        ],
+      });
+
+      console.log("Submitting proposal transaction:", tx);
+
+      const exec = await signAndExecute({
+        transaction: tx,
+      });
+
+      toast({
+        title: "Proposal Successful",
+        description: `Transaction Digest: ${exec.digest}`,
+      });
+    } catch (error: any) {
+      console.error("Proposal failed:", error);
+      toast({
+        title: "Error",
+        description:
+          error?.message ?? "An unexpected error occurred during the proposal.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProposing(false);
+      // allow re-uploading the same file if needed
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleProposeInvestment = () => {
+    fileInputRef.current?.click();
+  };
 
   if (loading) {
     return (
@@ -131,13 +250,24 @@ export default function StudentDetailPage() {
 
                   {isInvestor && (
                     <div className="flex gap-4">
-                      <Button onChange={handleProposeInvestment} size="lg">
-                        Propose Investment
+                      <Button
+                      onClick={handleProposeInvestment}
+                      size="lg"
+                      disabled={isProposing}
+                    >
+                        {isProposing ? "Proposing..." : "Propose Investment"}
                       </Button>
                       <Button size="lg" variant="outline">
                         Contact Student
                       </Button>
-                    </div>
+                      <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileSelect}
+                      style={{ display: "none" }}
+                      accept=".pdf"
+                    />
+                  </div>
                   )}
                 </div>
               </div>
@@ -227,7 +357,7 @@ export default function StudentDetailPage() {
                       <div>
                         <div className="font-medium">CV/Resume</div>
                         <div className="text-xs text-muted-foreground">
-                          IPFS: {student.cvHash.slice(0, 20)}...
+                          {student.cvHash.slice(0, 20)}...
                         </div>
                       </div>
                     </div>

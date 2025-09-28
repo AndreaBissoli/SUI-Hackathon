@@ -180,7 +180,7 @@ module edu_defi::edu_defi {
     /// Investor proposes a contract to a student
     public fun investor_propose_contract(
         student_address: address,
-        pdf_hash: String,
+        walrus_id: String,
         funding_amount: u64,
         release_interval_days: u64,
         equity_percentage: u64,
@@ -194,7 +194,7 @@ module edu_defi::edu_defi {
             &registry.students,
             &registry.investors,
             student_address,
-            pdf_hash,
+            walrus_id,
             funding_amount,
             release_interval_days,
             equity_percentage,

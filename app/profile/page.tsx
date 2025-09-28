@@ -188,7 +188,7 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
-          {<UserContracts />}
+          <UserContracts />
         </div>
       </main>
     </div>

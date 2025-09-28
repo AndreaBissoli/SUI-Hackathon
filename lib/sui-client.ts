@@ -1,9 +1,13 @@
-import { SuiClient, getFullnodeUrl } from "@mysten/sui.js/client";
-
+import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
+import { WalrusClient } from "@mysten/walrus";
 // Initialize Sui client for testnet
 export const suiClient = new SuiClient({
   url: getFullnodeUrl("testnet"),
 });
+export const walrusClient = new WalrusClient({
+  network: "testnet",
+  suiClient
+})
 
 // Contract addresses and package ID (these would be set after deployment)
 export const PACKAGE_ID = process.env.NEXT_PUBLIC_PACKAGE_ID || "0x...";
