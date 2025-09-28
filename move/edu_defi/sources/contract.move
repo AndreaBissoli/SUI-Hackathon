@@ -98,7 +98,7 @@ module edu_defi::contract {
         id: UID,
         student_address: address,
         investor_address: address,
-        pdf_hash: String,
+        walrus_id: String,
         funding_amount: u64, // Total funding amount by the investore
         release_interval_days: u64,  // Interval in days for fund release
         equity_percentage: u64, // Equity in the student owned by investor
@@ -121,7 +121,7 @@ module edu_defi::contract {
         students_registry: &Table<address, address>,
         investors_registry: &Table<address, address>,
         student_address: address,
-        pdf_hash: String,
+        walrus_id: String,
         funding_amount: u64,
         release_interval_days: u64,
         equity_percentage: u64,
@@ -139,7 +139,7 @@ module edu_defi::contract {
             id: object::new(ctx),
             student_address,
             investor_address: tx_context::sender(ctx),
-            pdf_hash,
+            walrus_id,
             funding_amount,
             release_interval_days,
             equity_percentage,
@@ -502,7 +502,7 @@ module edu_defi::contract {
         }
     }
 
-    // ============ Getter Functions per i dividendi ============
+    // ============ Getter Functions per i dividendi =============
 
     public fun get_unclaimed_dividends_count(
         reward_pool: &RewardPool,
@@ -548,7 +548,7 @@ module edu_defi::contract {
 
     /// Get contract information
     public fun get_info(contract: &Contract): (address, address, String, u64, u64, u64, bool) {
-        (contract.student_address, contract.investor_address, contract.pdf_hash,
+        (contract.student_address, contract.investor_address, contract.walrus_id,
          contract.funding_amount, contract.equity_percentage, contract.duration_months, contract.is_active)
     }
 }
