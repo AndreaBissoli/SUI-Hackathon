@@ -3,8 +3,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Loader2,
-  UserPlus,
   User,
   DollarSign,
   Percent,
@@ -18,9 +16,21 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { Contract } from "@/types";
+import { is } from "date-fns/locale";
+import {
+  AcceptContractParams,
+  acceptContractTransaction,
+  executeTransaction,
+  RejectContractParams,
+  rejectContractTransaction,
+} from "@/lib/sui-transactions";
+import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
+import { REGISTRY_ID } from "@/lib/sui-client";
 
 const ContractCard = ({ contract }: { contract: Contract }) => {
-  const { account, userProfile, isInvestor, isStudent } = useAuth();
+  const { account, userProfile, isInvestor, isStudent, refreshProfile } =
+    useAuth();
+  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
 
   // Determina l'altra parte del contratto
   const otherPartyAddress = isStudent
@@ -35,13 +45,45 @@ const ContractCard = ({ contract }: { contract: Contract }) => {
 
   // Gestori per accettare/rifiutare il contratto
   const handleAcceptContract = async () => {
-    // Implementa la logica per accettare il contratto
-    console.log("Accepting contract:", contract.id);
+    if (!account) return;
+
+    if (!isStudent) return;
+
+    try {
+      const transactionParameters: AcceptContractParams = {
+        contractId: contract.id,
+      };
+      const transaction = await acceptContractTransaction(
+        transactionParameters
+      );
+
+      await executeTransaction(transaction, signAndExecuteTransaction);
+    } catch (error) {
+      console.error("Error accepting contract:", error);
+    }
+    refreshProfile();
   };
 
   const handleRejectContract = async () => {
-    // Implementa la logica per rifiutare il contratto
-    console.log("Rejecting contract:", contract.id);
+    if (!account) return;
+
+    if (!isStudent) return;
+
+    try {
+      const transactionParameters: RejectContractParams = {
+        contractId: contract.id,
+        registryId: REGISTRY_ID,
+      };
+      const transaction = await rejectContractTransaction(
+        transactionParameters
+      );
+
+      await executeTransaction(transaction, signAndExecuteTransaction);
+      console.log("done");
+    } catch (error) {
+      console.error("Error rejecting contract:", error);
+    }
+    refreshProfile();
   };
 
   return (
@@ -128,7 +170,7 @@ const ContractCard = ({ contract }: { contract: Contract }) => {
         </div>
 
         {/* Azioni per contratti inattivi */}
-        {!contract.isActive && (
+        {!contract.isActive && isStudent && (
           <div className="flex flex-col sm:flex-row gap-2 p-3 border border-amber-200 bg-amber-50 rounded-lg">
             <div className="flex-1">
               <p className="text-sm font-medium text-amber-800">

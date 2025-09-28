@@ -6,6 +6,7 @@ module edu_defi::contract {
     use std::string::String;
     use sui::vec_map::{Self, VecMap};
     use edu_defi::errors;
+    use sui::table::{Self, Table};
 
     /// Dividend payment record
     public struct DividendPayment has store {
@@ -50,7 +51,10 @@ module edu_defi::contract {
 
 
     /// Create and share a contract, return its address
+    /// Create and share a contract, return its address
     public fun create_and_share_contract(
+        students_registry: &Table<address, address>,
+        investors_registry: &Table<address, address>,
         student_address: address,
         pdf_hash: String,
         funding_amount: u64,
@@ -64,6 +68,8 @@ module edu_defi::contract {
         assert!(equity_percentage <= 100, errors::invalid_percentage());
         assert!(duration_months > 0, errors::invalid_duration());
 
+        assert!(table::contains(students_registry, student_address), errors::unauthorized());
+        assert!(table::contains(investors_registry, tx_context::sender(ctx)), errors::unauthorized());
         let contract = Contract {
             id: object::new(ctx),
             student_address,

@@ -18,6 +18,8 @@ import {
 } from "@/lib/sui-transactions";
 import { REGISTRY_ID } from "@/lib/sui-client";
 import { createInvestorProfileTransaction } from "@/lib/sui-transactions";
+import { ref } from "process";
+import { useAuth } from "@/hooks/use-auth";
 interface InvestorFormData {
   name: string;
   surname: string;
@@ -29,6 +31,7 @@ export function InvestorRegistrationForm() {
   const account = useCurrentAccount();
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction(); // Usa mutate
   const [loading, setLoading] = useState(false);
+  const { refreshProfile } = useAuth();
   const [formData, setFormData] = useState<InvestorFormData>({
     name: "",
     surname: "",
@@ -77,6 +80,7 @@ export function InvestorRegistrationForm() {
     } finally {
       setLoading(false);
     }
+    refreshProfile();
   };
 
   const handleInputChange = (
