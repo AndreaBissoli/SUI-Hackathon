@@ -17,11 +17,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function StudentDetailPage() {
   const params = useParams();
   const [student, setStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
+  const { userProfile, isInvestor } = useAuth();
 
   useEffect(() => {
     async function loadStudent() {
@@ -127,14 +129,16 @@ export default function StudentDetailPage() {
                     </Badge>
                   </div>
 
-                  <div className="flex gap-4">
-                    <Button onChange={handleProposeInvestment} size="lg">
-                      Propose Investment
-                    </Button>
-                    <Button size="lg" variant="outline">
-                      Contact Student
-                    </Button>
-                  </div>
+                  {isInvestor && (
+                    <div className="flex gap-4">
+                      <Button onChange={handleProposeInvestment} size="lg">
+                        Propose Investment
+                      </Button>
+                      <Button size="lg" variant="outline">
+                        Contact Student
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>

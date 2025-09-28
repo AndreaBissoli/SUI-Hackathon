@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useCurrentAccount } from "@mysten/dapp-kit";
-import { getUserProfileByAddress } from "@/lib/sui-queries";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import UserContracts from "@/components/user-contracts";
@@ -25,8 +24,7 @@ export default function ProfilePage() {
   const account = useCurrentAccount();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const { userProfile, getDisplayName, getInitials, refreshProfile } =
-    useAuth();
+  const { userProfile, displayName, initials, refreshProfile } = useAuth();
 
   useEffect(() => {
     if (!account) {
@@ -107,15 +105,15 @@ export default function ProfilePage() {
                     src={
                       userProfile.data?.profileImage || "/default-avatar.png"
                     }
-                    alt={getDisplayName()}
+                    alt={displayName}
                     className="object-cover"
                   />
                   <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                    {getInitials()}
+                    {initials}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <CardTitle className="text-2xl">{getDisplayName()}</CardTitle>
+                  <CardTitle className="text-2xl">{displayName}</CardTitle>
                   <p className="text-muted-foreground">
                     {userProfile.type === "student" ? "Student" : "Investor"}
                   </p>
@@ -190,8 +188,8 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
+          {<UserContracts />}
         </div>
-        {<UserContracts />}
       </main>
     </div>
   );

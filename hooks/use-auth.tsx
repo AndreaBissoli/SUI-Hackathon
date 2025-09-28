@@ -6,10 +6,11 @@ import React, {
   useState,
   useEffect,
   ReactNode,
+  useMemo,
 } from "react";
 import { useCurrentAccount } from "@mysten/dapp-kit";
-import { getUserProfileByAddress } from "@/lib/sui-queries";
-import type { Student, Investor } from "@/types";
+import { getUserProfileByAddress, fetchUserContracts } from "@/lib/sui-queries";
+import type { Student, Investor, Contract } from "@/types";
 
 // Interfaccia UserProfile condivisa in tutta l'app
 export type UserProfile =
@@ -43,19 +44,20 @@ interface AuthContextType {
   isInvestor: boolean;
   hasProfile: boolean;
 
+  // Proprietà computate (invece di getters)
+  displayName: string;
+  profileImage: string;
+  initials: string;
+
+  // Type-safe data (invece di getters)
+  studentData: Student | null;
+  investorData: Investor | null;
+  contracts: Contract[] | null;
+
   // Funzioni di gestione
   refreshProfile: () => Promise<void>;
   updateProfile: (newProfile: UserProfile) => void;
   resetProfile: () => void;
-
-  // Getters per UI
-  getDisplayName: () => string;
-  getProfileImage: () => string;
-  getInitials: () => string;
-
-  // Type-safe data getters
-  getStudentData: () => Student | null;
-  getInvestorData: () => Investor | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -67,6 +69,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const account = useCurrentAccount();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [contracts, setContracts] = useState<Contract[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -84,6 +87,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       console.log("Loading profile for address:", address);
       const profile = await getUserProfileByAddress(address);
+
+      if (!profile.data?.objectId) return;
+
+      const contracts = await fetchUserContracts(address);
+
+      setContracts(contracts);
 
       // Se il profilo esiste, crea il UserProfile corretto
       if (profile.type && profile.data) {
@@ -177,11 +186,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Funzione per aggiornare il profilo senza fare una nuova query (ottimistico)
   const updateProfile = (newProfile: UserProfile): void => {
     setUserProfile(newProfile);
-    setIsAuthenticated(!!newProfile.type);
+    setIsAuthenticated(newProfile.type !== null);
   };
 
-  // Getters per i dati del profilo
-  const getDisplayName = (): string => {
+  const displayName = useMemo((): string => {
     if (
       userProfile?.data &&
       "name" in userProfile.data &&
@@ -193,16 +201,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return account.address.slice(0, 6) + "..." + account.address.slice(-4);
     }
     return "";
-  };
+  }, [userProfile, account]);
 
-  const getProfileImage = (): string => {
+  const profileImage = useMemo((): string => {
     if (userProfile?.data && "profileImage" in userProfile.data) {
       return userProfile.data.profileImage || "/default-avatar.png";
     }
     return "/default-avatar.png";
-  };
+  }, [userProfile]);
 
-  const getInitials = (): string => {
+  const initials = useMemo((): string => {
     if (
       userProfile?.data &&
       "name" in userProfile.data &&
@@ -214,24 +222,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return account.address.slice(2, 4).toUpperCase();
     }
     return "U";
-  };
+  }, [userProfile, account]);
 
-  // Type guards per accedere ai dati specifici
-  const getStudentData = (): Student | null => {
+  // 🎯 TYPE-SAFE DATA (useMemo per performance)
+  const studentData = useMemo((): Student | null => {
     if (userProfile?.type === "student" && userProfile.data) {
       return userProfile.data as Student;
     }
     return null;
-  };
+  }, [userProfile]);
 
-  const getInvestorData = (): Investor | null => {
+  const investorData = useMemo((): Investor | null => {
     if (userProfile?.type === "investor" && userProfile.data) {
       return userProfile.data as Investor;
     }
     return null;
-  };
+  }, [userProfile]);
 
-  // Computed values
+  // Computed flags
   const isStudent = userProfile?.type === "student";
   const isInvestor = userProfile?.type === "investor";
   const hasProfile = userProfile?.type !== null;
@@ -239,6 +247,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value: AuthContextType = {
     // Stato di base
     account,
+    contracts,
     userProfile,
     loading,
     isAuthenticated,
@@ -248,19 +257,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isInvestor,
     hasProfile,
 
+    // Proprietà computate (invece di getters!)
+    displayName,
+    profileImage,
+    initials,
+
+    // Type-safe data (invece di getters!)
+    studentData,
+    investorData,
+
     // Funzioni di gestione
     refreshProfile,
     updateProfile,
     resetProfile,
-
-    // Getters per UI
-    getDisplayName,
-    getProfileImage,
-    getInitials,
-
-    // Type-safe data getters
-    getStudentData,
-    getInvestorData,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

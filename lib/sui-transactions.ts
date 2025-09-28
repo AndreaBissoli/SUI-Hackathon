@@ -23,6 +23,8 @@ export interface CreateInvestorProfileParams {
   registryId: string;
 }
 
+export interface ProposeContractParams {}
+
 // Usa questa versione per l'hook mutate
 export async function executeTransaction(
   tx: Transaction,
