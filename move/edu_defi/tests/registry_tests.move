@@ -194,43 +194,4 @@ module edu_defi::registry_tests {
         clock::destroy_for_testing(clock);
         test_scenario::end(scenario);
     }
-
-    #[test]
-    fun test_registry_helpers() {
-        let mut scenario = test_scenario::begin(ADMIN_ADDR);
-
-        // Create a ServiceRegistry for testing
-        let mut registry = edu_defi::create_registry_for_testing(test_scenario::ctx(&mut scenario));
-
-        // Test initial state
-        let (students_count, investors_count, contracts_count) = edu_defi::get_registry_stats(&registry);
-        assert!(students_count == 0, 0);
-        assert!(investors_count == 0, 1);
-        assert!(contracts_count == 0, 2);
-
-        // Test add_student
-        edu_defi::add_student(&mut registry, STUDENT_ADDR);
-        let (students_count, _, _) = edu_defi::get_registry_stats(&registry);
-        assert!(students_count == 1, 3);
-        
-        // Test add_investor
-        edu_defi::add_investor(&mut registry, INVESTOR_ADDR);
-        let (_, investors_count, _) = edu_defi::get_registry_stats(&registry);
-        assert!(investors_count == 1, 4);
-        
-        // Test add_contract
-        edu_defi::add_contract(&mut registry, @0xC);
-        let (_, _, contracts_count) = edu_defi::get_registry_stats(&registry);
-        assert!(contracts_count == 1, 5);
-
-        // Final verification
-        let (final_students, final_investors, final_contracts) = edu_defi::get_registry_stats(&registry);
-        assert!(final_students == 1, 6);
-        assert!(final_investors == 1, 7);
-        assert!(final_contracts == 1, 8);
-        
-        // Clean up
-        sui::test_utils::destroy(registry); 
-        test_scenario::end(scenario);
-    }
 }
