@@ -23,6 +23,16 @@ module edu_defi::edu_defi {
         investor_address: address,
     }
     
+    public struct StudentRegistered has copy, drop {
+        student_address: address,
+        owner: address,
+    }
+    
+    public struct InvestorRegistered has copy, drop {
+        investor_address: address,
+        owner: address,
+    }
+    
 
     public struct ServiceRegistry has key {
         id: UID,
@@ -122,7 +132,15 @@ module edu_defi::edu_defi {
             clock,
             ctx
         );
-        table::add(&mut registry.students, tx_context::sender(ctx), student::get_address(&student));
+        let student_address = student::get_address(&student);
+        table::add(&mut registry.students, tx_context::sender(ctx), student_address);
+        
+        // Emit event for student registration
+        event::emit(StudentRegistered {
+            student_address,
+            owner: tx_context::sender(ctx),
+        });
+        
         transfer::public_transfer(student, tx_context::sender(ctx));
     }
 
@@ -149,6 +167,13 @@ module edu_defi::edu_defi {
         );
         let investor_address = investor::get_address(&investor);
         table::add(&mut registry.investors, tx_context::sender(ctx), investor_address);
+        
+        // Emit event for investor registration
+        event::emit(InvestorRegistered {
+            investor_address,
+            owner: tx_context::sender(ctx),
+        });
+        
         transfer::public_transfer(investor, tx_context::sender(ctx));
     }
 
