@@ -1,7 +1,20 @@
-import "@mysten/dapp-kit/dist/index.css";
+import type React from "react";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import { Providers } from "./providers";
-import Navbar from "./components/Navbar";
+import { Providers } from "@/components/providers";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+export const metadata: Metadata = {
+  title: "EduDeFi - Decentralized Education Funding",
+  description:
+    "Connect students with investors through blockchain-powered education funding",
+  generator: "v0.app",
+};
 
 export default function RootLayout({
   children,
@@ -9,18 +22,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <head>
-        <meta charSet="UTF-8" />
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Sui dApp Starter</title>
-      </head>
-      <body>
-        <Providers>
-          <Navbar />
-          {children}
-        </Providers>
+    <html lang="en" className={`${inter.variable} antialiased`}>
+      <body className="font-sans">
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
