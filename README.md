@@ -33,9 +33,9 @@ Bright Futures makes education more accessible, replaces debt with opportunity, 
 
 ## IMPORTANT ADDRESSES
 - **Package ID**:
-0x03d5d4f599a6ec51d77334a07f4e059e93820c4b168d1fb97008ca43612f680b
+0xfec536ee280b77428342eb65512b04eb2aa10be1e03008d824d8c5c5a3e6d921
 - **Registry ID**:
-0x7a2fbeaf9928c9f17b433c4a5dbcfe0545156a9f071ba22cf8afaf542af43641
+0xc290fb51d890cd968dc9f7e0ebe1663ed4a1dd60ece29423a30a568ba5c650f9
 
 ---
 
