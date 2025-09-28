@@ -27,7 +27,7 @@ module edu_defi::edu_defi {
         id: UID,
         students: Table<address, address>,
         investors: Table<address, address>,
-        // contracts is a table mapping Student or Investor addresses to a vector of their contract addresses
+        // contracts is a table mapping Student or Investor addresses to a vector of their contract ObjectID
         contracts: Table<address, vector<address>>, // keep order if you really need it
     }
 
@@ -166,10 +166,8 @@ module edu_defi::edu_defi {
             clock,
             ctx
         );
-        
-        let investor_address = *table::borrow(&registry.investors, tx_context::sender(ctx));
 
-        add_contract(registry, contract_address, student_address, &investor_address);
+        add_contract(registry, contract_address, student_address, &tx_context::sender(ctx));
         // Emit event for frontend notification
         event::emit(ContractProposedEvent {
             contract_address,
