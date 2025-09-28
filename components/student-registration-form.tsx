@@ -178,7 +178,7 @@ export function StudentRegistrationForm() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Upload your CV to IPFS and paste the hash here
+              Upload your CV
             </p>
           </div>
 

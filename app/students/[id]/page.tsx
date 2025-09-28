@@ -96,13 +96,13 @@ export default function StudentDetailPage() {
 
       // Step 3: upload slivers (HTTP)
       await flow.upload({ digest });
-
+      console.log("Walrus upload completed");
       // Step 4: certify (wallet signs)
       const certifyTx = await flow.certify();
       await signAndExecute({
         transaction: certifyTx,
       });
-
+      console.log("Walrus certify completed");
       // Step 5: read resulting blobId
       const files = await flow.listFiles();
       const blobId = files[0]?.blobId;
@@ -116,6 +116,7 @@ export default function StudentDetailPage() {
         description: `Blob ID: ${blobId.slice(0, 14)}…`,
       });
 
+      console.log("Walrus file available at blobId:", blobId);
       // --- SUI: call your Move entry with blobId ---
       const tx = new Transaction();
       tx.moveCall({
@@ -131,6 +132,8 @@ export default function StudentDetailPage() {
           tx.object("0x6"), // Clock
         ],
       });
+
+      console.log("Submitting proposal transaction:", tx);
 
       const exec = await signAndExecute({
         transaction: tx,
@@ -354,7 +357,7 @@ export default function StudentDetailPage() {
                       <div>
                         <div className="font-medium">CV/Resume</div>
                         <div className="text-xs text-muted-foreground">
-                          IPFS: {student.cvHash.slice(0, 20)}...
+                          {student.cvHash.slice(0, 20)}...
                         </div>
                       </div>
                     </div>
