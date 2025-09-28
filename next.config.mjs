@@ -8,7 +8,14 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
-  },
-}
 
-export default nextConfig
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lorenzomoni.com",
+      },
+    ],
+  },
+};
+
+export default nextConfig;

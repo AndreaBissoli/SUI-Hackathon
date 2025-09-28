@@ -23,7 +23,14 @@ export interface CreateInvestorProfileParams {
   registryId: string;
 }
 
-export interface ProposeContractParams {}
+export interface AcceptContractParams {
+  contractId: string;
+}
+
+export interface RejectContractParams {
+  contractId: string;
+  registryId: string;
+}
 
 // Usa questa versione per l'hook mutate
 export async function executeTransaction(
@@ -113,6 +120,33 @@ export function createInvestorProfileTransaction(
       tx.pure.string(params.profileImage),
       tx.object(params.registryId),
       tx.object("0x6"), // Clock object
+    ],
+  });
+
+  return tx;
+}
+
+export function acceptContractTransaction(params: AcceptContractParams) {
+  const tx = new Transaction();
+
+  tx.moveCall({
+    target: `${MODULES.CONTRACT}::accept_contract`,
+    arguments: [
+      tx.object(params.contractId), // contract object reference
+    ],
+  });
+
+  return tx;
+}
+
+export function rejectContractTransaction(params: RejectContractParams) {
+  const tx = new Transaction();
+
+  tx.moveCall({
+    target: `${MODULES.EDU_DEFI}::student_reject_contract`,
+    arguments: [
+      tx.object(params.contractId), // contract object reference
+      tx.object(params.registryId), // registry object reference
     ],
   });
 

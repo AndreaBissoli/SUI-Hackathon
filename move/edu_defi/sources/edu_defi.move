@@ -9,6 +9,7 @@ module edu_defi::edu_defi {
     use sui::clock::Clock;
     use std::string::String;
     use sui::table::{Self as table, Table};
+    
 
     public struct ContractProposedEvent has copy, drop {
         contract_address: address,
@@ -63,25 +64,33 @@ module edu_defi::edu_defi {
 
     /// Remove contract from registry
     fun remove_contract(registry: &mut ServiceRegistry, contract_address: address, student_address: address, investor_address: address) {
-        let student_contracts = table::borrow_mut(&mut registry.contracts, student_address);
-        let mut i = 0;
-        while (i < vector::length(student_contracts)) {
-            if (vector::borrow(student_contracts, i) == &contract_address) {
-                vector::remove(student_contracts, i);
-                break
+        // Remove from student contracts
+        if (table::contains(&registry.contracts, student_address)) {
+            let student_contracts = table::borrow_mut(&mut registry.contracts, student_address);
+            let mut i = 0;
+            while (i < vector::length(student_contracts)) {
+                if (*vector::borrow(student_contracts, i) == contract_address) {
+                    vector::swap_remove(student_contracts, i);
+                    break
+                };
+                i = i + 1;
             };
-            i = i + 1;
         };
         
-        let investor_contracts = table::borrow_mut(&mut registry.contracts, investor_address);
-        let mut j = 0;
-        while (j < vector::length(investor_contracts)) {
-            if (vector::borrow(investor_contracts, j) == &contract_address) {
-                vector::remove(investor_contracts, j);
-                break
+        // Remove from investor contracts
+        if (table::contains(&registry.contracts, investor_address)) {
+            let investor_contracts = table::borrow_mut(&mut registry.contracts, investor_address);
+            let mut j = 0;
+            while (j < vector::length(investor_contracts)) {
+                if (*vector::borrow(investor_contracts, j) == contract_address) {
+                    vector::swap_remove(investor_contracts, j);
+                    break
+                };
+                j = j + 1;
             };
-            j = j + 1;
         }
+
+        
     }
 
     /// Create a student profile
@@ -157,6 +166,8 @@ module edu_defi::edu_defi {
     ) {
         assert!(table::contains(&registry.investors, tx_context::sender(ctx)), errors::unauthorized());
         let contract_address = contract::create_and_share_contract(
+            &registry.students,
+            &registry.investors,
             student_address,
             pdf_hash,
             funding_amount,
@@ -191,6 +202,7 @@ module edu_defi::edu_defi {
         // Get contract info for the event
         let (student_address, investor_address, _, _, _, _, _) = contract::get_info(contract);
         let contract_address = contract::get_address(contract);
+    
         
         // Remove contract from registry
         remove_contract(registry, contract_address, student_address, investor_address);

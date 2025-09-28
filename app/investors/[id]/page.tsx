@@ -1,43 +1,55 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
-import { Navigation } from "@/components/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { fetchInvestors, fetchContracts } from "@/lib/sui-queries"
-import type { Investor, Contract } from "@/types"
-import { ArrowLeft, User, Calendar, TrendingUp, DollarSign, FileText } from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { Navigation } from "@/components/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { fetchInvestors, fetchContracts } from "@/lib/sui-queries";
+import type { Investor, Contract } from "@/types";
+import {
+  ArrowLeft,
+  User,
+  Calendar,
+  TrendingUp,
+  DollarSign,
+  FileText,
+} from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
 
 export default function InvestorDetailPage() {
-  const params = useParams()
-  const [investor, setInvestor] = useState<Investor | null>(null)
-  const [contracts, setContracts] = useState<Contract[]>([])
-  const [loading, setLoading] = useState(true)
+  const params = useParams();
+  const [investor, setInvestor] = useState<Investor | null>(null);
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadInvestor() {
       try {
-        const [investors, allContracts] = await Promise.all([fetchInvestors(), fetchContracts()])
+        const [investors, allContracts] = await Promise.all([
+          fetchInvestors(),
+          fetchContracts(),
+        ]);
 
-        const foundInvestor = investors.find((i) => i.id === params.id)
-        setInvestor(foundInvestor || null)
+        const foundInvestor = investors.find((i) => i.id === params.id);
+        setInvestor(foundInvestor || null);
 
         // Filter contracts for this investor
-        const investorContracts = allContracts.filter((contract) => contract.investorAddress === foundInvestor?.owner)
-        setContracts(investorContracts)
+        const investorContracts = allContracts.filter(
+          (contract) => contract.investorAddress === foundInvestor?.owner
+        );
+        setContracts(investorContracts);
       } catch (error) {
-        console.error("Error loading investor:", error)
+        console.error("Error loading investor:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    loadInvestor()
-  }, [params.id])
+    loadInvestor();
+  }, [params.id]);
 
   if (loading) {
     return (
@@ -53,7 +65,7 @@ export default function InvestorDetailPage() {
           </div>
         </main>
       </div>
-    )
+    );
   }
 
   if (!investor) {
@@ -63,7 +75,9 @@ export default function InvestorDetailPage() {
         <main className="py-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-2xl font-bold mb-4">Investor Not Found</h1>
-            <p className="text-muted-foreground mb-6">The investor profile you're looking for doesn't exist.</p>
+            <p className="text-muted-foreground mb-6">
+              The investor profile you're looking for doesn't exist.
+            </p>
             <Link href="/investors">
               <Button>
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -73,11 +87,16 @@ export default function InvestorDetailPage() {
           </div>
         </main>
       </div>
-    )
+    );
   }
 
-  const totalInvested = contracts.reduce((sum, contract) => sum + contract.fundingAmount, 0)
-  const activeContracts = contracts.filter((contract) => contract.isActive).length
+  const totalInvested = contracts.reduce(
+    (sum, contract) => sum + contract.fundingAmount,
+    0
+  );
+  const activeContracts = contracts.filter(
+    (contract) => contract.isActive
+  ).length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -118,8 +137,12 @@ export default function InvestorDetailPage() {
 
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="secondary">Active Investor</Badge>
-                    <Badge variant="outline">{activeContracts} Active Contracts</Badge>
-                    <Badge variant="outline">${totalInvested.toLocaleString()} Invested</Badge>
+                    <Badge variant="outline">
+                      {activeContracts} Active Contracts
+                    </Badge>
+                    <Badge variant="outline">
+                      ${totalInvested.toLocaleString()} Invested
+                    </Badge>
                   </div>
 
                   <div className="flex gap-4">
@@ -143,8 +166,12 @@ export default function InvestorDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">${totalInvested.toLocaleString()}</div>
-                <p className="text-sm text-muted-foreground">Across {contracts.length} contracts</p>
+                <div className="text-2xl font-bold">
+                  ${totalInvested.toLocaleString()}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Across {contracts.length} contracts
+                </p>
               </CardContent>
             </Card>
 
@@ -157,7 +184,9 @@ export default function InvestorDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{activeContracts}</div>
-                <p className="text-sm text-muted-foreground">Currently funding students</p>
+                <p className="text-sm text-muted-foreground">
+                  Currently funding students
+                </p>
               </CardContent>
             </Card>
 
@@ -169,8 +198,12 @@ export default function InvestorDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{new Date(investor.createdAt).getFullYear()}</div>
-                <p className="text-sm text-muted-foreground">{new Date(investor.createdAt).toLocaleDateString()}</p>
+                <div className="text-2xl font-bold">
+                  {new Date(investor.createdAt).getFullYear()}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {new Date(investor.createdAt).toLocaleDateString()}
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -187,21 +220,30 @@ export default function InvestorDetailPage() {
               {contracts.length > 0 ? (
                 <div className="space-y-4">
                   {contracts.map((contract) => (
-                    <div key={contract.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div
+                      key={contract.id}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
                       <div className="flex-1">
-                        <div className="font-medium">Contract #{contract.id.slice(0, 8)}...</div>
-                        <div className="text-sm text-muted-foreground">
-                          Student: {contract.studentAddress.slice(0, 6)}...{contract.studentAddress.slice(-4)}
+                        <div className="font-medium">
+                          Contract #{contract.id.slice(0, 8)}...
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          Created: {new Date(contract.createdAt).toLocaleDateString()}
+                          Student: {contract.studentAddress.slice(0, 6)}...
+                          {contract.studentAddress.slice(-4)}
                         </div>
                       </div>
 
                       <div className="text-right space-y-1">
-                        <div className="font-medium">${contract.fundingAmount.toLocaleString()}</div>
-                        <div className="text-sm text-muted-foreground">{contract.equityPercentage}% equity</div>
-                        <Badge variant={contract.isActive ? "default" : "secondary"}>
+                        <div className="font-medium">
+                          ${contract.fundingAmount.toLocaleString()}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {contract.equityPercentage}% equity
+                        </div>
+                        <Badge
+                          variant={contract.isActive ? "default" : "secondary"}
+                        >
                           {contract.isActive ? "Active" : "Inactive"}
                         </Badge>
                       </div>
@@ -210,7 +252,9 @@ export default function InvestorDetailPage() {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground">No investment contracts yet</p>
+                  <p className="text-muted-foreground">
+                    No investment contracts yet
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -228,7 +272,9 @@ export default function InvestorDetailPage() {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Profile Created</span>
-                  <span>{new Date(investor.createdAt).toLocaleDateString()}</span>
+                  <span>
+                    {new Date(investor.createdAt).toLocaleDateString()}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Wallet Address</span>
@@ -241,7 +287,9 @@ export default function InvestorDetailPage() {
                   <Badge variant="secondary">Active</Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Investment Style</span>
+                  <span className="text-muted-foreground">
+                    Investment Style
+                  </span>
                   <span>Education Focused</span>
                 </div>
               </div>
@@ -250,5 +298,5 @@ export default function InvestorDetailPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }

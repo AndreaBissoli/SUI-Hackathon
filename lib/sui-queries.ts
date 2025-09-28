@@ -150,10 +150,6 @@ export async function fetchInvestors(): Promise<Investor[]> {
   return fetchRegistryAddressMap<Investor>("investors", parseInvestor);
 }
 
-export async function fetchContracts(): Promise<Contract[]> {
-  return [];
-}
-
 // Funzione per ottenere profilo studente di un indirizzo
 export async function getStudentProfileByAddress(address: string) {
   try {

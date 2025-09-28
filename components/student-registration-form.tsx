@@ -18,6 +18,7 @@ import {
 } from "@/lib/sui-transactions";
 import { REGISTRY_ID } from "@/lib/sui-client";
 import { createStudentProfileTransaction } from "@/lib/sui-transactions";
+import { useAuth } from "@/hooks/use-auth";
 
 interface StudentFormData {
   name: string;
@@ -32,6 +33,7 @@ interface StudentFormData {
 
 export function StudentRegistrationForm() {
   const account = useCurrentAccount();
+  const { refreshProfile } = useAuth();
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction(); // Usa mutate
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<StudentFormData>({
@@ -90,6 +92,7 @@ export function StudentRegistrationForm() {
     } finally {
       setLoading(false);
     }
+    refreshProfile();
   };
 
   const handleInputChange = (

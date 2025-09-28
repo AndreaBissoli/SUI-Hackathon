@@ -194,4 +194,6 @@ module edu_defi::registry_tests {
         clock::destroy_for_testing(clock);
         test_scenario::end(scenario);
     }
+
+
 }
