@@ -16,7 +16,6 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { Contract } from "@/types";
-import { is } from "date-fns/locale";
 import {
   AcceptContractParams,
   acceptContractTransaction,
@@ -27,7 +26,7 @@ import {
   FundContractParams,
 } from "@/lib/sui-transactions";
 import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
-import { REGISTRY_ID, walrusClient } from "@/lib/sui-client";
+import { REGISTRY_ID } from "@/lib/sui-client";
 import { getUserProfileByAddress } from "@/lib/sui-queries";
 import { useEffect, useState } from "react";
 
@@ -125,15 +124,8 @@ const ContractCard = ({ contract }: { contract: Contract }) => {
   };
 
   const handleOpenContract = async () => {
-    const res = await fetch(
-      `https://aggregator.walrus-testnet.walrus.space/v1/blobs/${contract.walrus_id}`
-    ); // metti l’URL del gateway che usi
-    const mime = res.headers.get("content-type") || "application/octet-stream";
-    const ab = await res.arrayBuffer();
-    const blob = new Blob([ab], { type: mime });
-
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
+    const aggregatorUrl = "https://aggregator.walrus-testnet.walrus.space";
+    window.open(`${aggregatorUrl}/v1/blobs/${contract.walrus_id}`, "_blank");
   };
 
   return (
