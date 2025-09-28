@@ -1,7 +1,6 @@
 import type { Student, Investor, Contract } from "@/types";
 import { suiClient, REGISTRY_ID, STRUCTS } from "./sui-client";
-import type { SuiObjectResponse } from "@mysten/sui.js/client";
-import { add } from "date-fns";
+import type { SuiObjectResponse } from "@mysten/sui/client";
 
 function toNum(x: unknown, label: string): number {
   const n = typeof x === "string" ? Number(x) : (x as number);

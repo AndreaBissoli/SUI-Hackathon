@@ -55,7 +55,7 @@ export async function executeTransaction(
             // Controlla se il result ha il digest
             if (result && result.digest) {
               // Aspetta la conferma
-              await suiClient.waitForTransactionBlock({
+              await suiClient.waitForTransaction({
                 digest: result.digest,
                 options: {
                   showEffects: true,
