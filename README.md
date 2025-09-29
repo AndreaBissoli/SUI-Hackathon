@@ -1,5 +1,13 @@
-# Bright Futures 🌅  
+# Bright Futures
 **Invest in Potential. Harvest Success.**
+
+## 🏆 Hackathon Achievement
+
+This project was built during the **36-hour Sui hackathon** organized by the **[Blockchain Student Association - EPFL](https://www.linkedin.com/company/blockchain-student-association/)** in September 2025, the **biggest irl hackathon** on Sui. Among 50 competing teams and almost 200 students, Bright Futures **won the prize of honorable mention**, demonstrating the innovative potential of our approach to decentralized education financing.
+
+---
+
+## 🚀 Overview
 
 Bright Futures is a decentralized platform on **Sui** that reimagines how education is funded. Instead of relying on traditional student loans, learners can request financial support directly from investors who believe in their potential. When an investor proposes a smart contract and the student accepts, **funds are deposited** in SUI and released gradually over time. In return, the student commits to sharing a small **percentage of their future income** for an agreed period.  
 
@@ -32,6 +40,6 @@ Bright Futures makes education more accessible, replaces debt with opportunity, 
 ---
 
 ## 📬 The Team
-- [@ale18V](https://github.com/ale18V)
-- [@lorenzo-moni](https://github.com/lorenzo-moni)
-- [@AndreaBissoli](https://github.com/AndreaBissoli)
+- [@ale18V](https://github.com/ale18V) - [LinkedIn](https://www.linkedin.com/in/alessandrobombarda)
+- [@lorenzo-moni](https://github.com/lorenzo-moni) - [LinkedIn](https://www.linkedin.com/in/lorenzomoni)
+- [@AndreaBissoli](https://github.com/AndreaBissoli) - [LinkedIn](https://www.linkedin.com/in/andrea-bissoli)
