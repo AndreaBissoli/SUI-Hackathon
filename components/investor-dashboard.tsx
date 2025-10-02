@@ -117,7 +117,8 @@ export function InvestorDashboard({ investor, contracts }: InvestorDashboardProp
                       Student: {contract.studentAddress.slice(0, 6)}...{contract.studentAddress.slice(-4)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Created: {new Date(contract.createdAt).toLocaleDateString()}
+                      
+		    	Created: {new Date().toLocaleDateString()}
                     </div>
                   </div>
 
